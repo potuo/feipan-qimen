@@ -312,7 +312,9 @@ fun MainApp(
                 }
                 HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
                 Text(
-                    "飞盘奇门遁甲 v2.5\n鸣法体系 · 值使飞宫法",
+                    "天禽 v${runCatching {
+                        context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "?"
+                    }.getOrDefault("?")}\n飞盘奇门 · 鸣法体系 · 值使飞宫法",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
