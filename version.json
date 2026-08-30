@@ -1,5 +1,5 @@
 {
-  "version": "2.6.1",
-  "apk_url": "https://github.com/potuo/feipan-qimen/releases/download/v2.6.1/app-debug.apk",
-  "notes": "设置页精简，更新日志联网拉取"
+  "version": "2.6.2",
+  "apk_url": "https://github.com/potuo/feipan-qimen/releases/download/v2.6.2/app-debug.apk",
+  "notes": "输入/结果页 UI 统一居中，格局区排版优化"
 }

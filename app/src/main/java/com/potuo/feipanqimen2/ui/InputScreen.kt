@@ -33,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import com.potuo.feipanqimen2.qimen.QimenConstants
 import com.potuo.feipanqimen2.qimen.TrueSolarTime
 import com.potuo.feipanqimen2.ui.components.QimenButton
@@ -72,11 +73,18 @@ fun InputScreen(viewModel: MainViewModel, onCalculate: () -> Unit) {
             .padding(QimenDimens.spacingXl),
         verticalArrangement = Arrangement.spacedBy(QimenDimens.spacingLg),
     ) {
-        Text("飞盘奇门排盘", style = MaterialTheme.typography.headlineMedium)
+        Text(
+            "飞盘奇门排盘",
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center,
+        )
         Text(
             "选择日期与时辰，点击起盘",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center,
         )
 
         QimenOutlinedButton(
@@ -88,9 +96,14 @@ fun InputScreen(viewModel: MainViewModel, onCalculate: () -> Unit) {
             )
         }
 
-        Text("选择时辰", style = MaterialTheme.typography.titleSmall)
+        Text(
+            "选择时辰",
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center,
+        )
         FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm),
+            horizontalArrangement = Arrangement.Center,
             verticalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm),
         ) {
             QimenConstants.HOUR_NAMES.forEachIndexed { index, name ->
@@ -113,6 +126,8 @@ fun InputScreen(viewModel: MainViewModel, onCalculate: () -> Unit) {
             style = MaterialTheme.typography.labelSmall,
             color = if (crossingHint != null) MaterialTheme.colorScheme.error
             else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center,
         )
 
         OutlinedTextField(

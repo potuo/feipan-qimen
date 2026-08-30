@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -37,7 +38,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import com.potuo.feipanqimen2.QimenShareImage
 import com.potuo.feipanqimen2.data.CASE_CATEGORIES
@@ -90,13 +93,28 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
             shape = CardShape,
         ) {
             Column(modifier = Modifier.padding(QimenDimens.spacingLg)) {
-                Text(r.siZhu, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    r.siZhu,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center,
+                )
                 Spacer(modifier = Modifier.height(QimenDimens.spacingXs))
-                Text("${r.jieQi} · ${r.yuan} · ${r.dunType}${r.juNumber}局")
-                Text("旬首：${r.xunShou}（遁${r.xunShouStem}）· 空亡：${r.kongWang}")
+                Text(
+                    "${r.jieQi} · ${r.yuan} · ${r.dunType}${r.juNumber}局",
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center,
+                )
+                Text(
+                    "旬首：${r.xunShou}（遁${r.xunShouStem}）· 空亡：${r.kongWang}",
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center,
+                )
                 Spacer(modifier = Modifier.height(QimenDimens.spacingSm))
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(QimenDimens.spacingMd),
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     SealBadge(text = "符")
@@ -104,18 +122,15 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                         "${r.zhiFuStar}·${QimenConstants.PALACE_NAMES[r.zhiFuPalace]}${r.zhiFuPalace}宫",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(start = QimenDimens.spacingXs),
                     )
-                }
-                Spacer(modifier = Modifier.height(QimenDimens.spacingXs))
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(QimenDimens.spacingMd),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
+                    Spacer(modifier = Modifier.width(QimenDimens.spacingLg))
                     SealBadge(text = "使")
                     Text(
                         "${r.zhiShiGate}门·${QimenConstants.PALACE_NAMES[r.zhiShiPalace]}${r.zhiShiPalace}宫",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(start = QimenDimens.spacingXs),
                     )
                 }
             }
@@ -130,12 +145,19 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                 shape = CardShape,
             ) {
                 Column(modifier = Modifier.padding(QimenDimens.spacingLg)) {
-                    Text("格局", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
-                    Spacer(modifier = Modifier.height(QimenDimens.spacingSm))
+                    Text(
+                        "格局",
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                    )
+                    Spacer(modifier = Modifier.height(QimenDimens.spacingMd))
                     patterns.forEach { p ->
-                        Row(modifier = Modifier.padding(bottom = QimenDimens.spacingXs)) {
+                        Column(modifier = Modifier.padding(bottom = QimenDimens.spacingMd)) {
                             Text(
                                 p.name,
+                                style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.SemiBold,
                                 color = when (p.isAuspicious) {
                                     true -> MaterialTheme.colorScheme.primary
@@ -143,11 +165,12 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                                     null -> MaterialTheme.colorScheme.onSurfaceVariant
                                 },
                             )
-                            Spacer(modifier = Modifier.height(0.dp))
+                            Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                "　${p.detail}",
-                                style = MaterialTheme.typography.bodySmall,
+                                p.detail,
+                                style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                lineHeight = 22.sp,
                             )
                         }
                     }
@@ -170,9 +193,14 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
             modifier = Modifier.fillMaxWidth(),
         )
 
-        Text("事项类别", style = MaterialTheme.typography.titleSmall)
+        Text(
+            "事项类别",
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center,
+        )
         FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm),
+            horizontalArrangement = Arrangement.Center,
             verticalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm),
         ) {
             CASE_CATEGORIES.forEach { c ->
