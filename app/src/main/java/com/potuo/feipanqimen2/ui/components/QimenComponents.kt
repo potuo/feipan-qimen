@@ -48,8 +48,8 @@ import com.google.gson.Gson
 import com.potuo.feipanqimen2.qimen.PalaceInfo
 import com.potuo.feipanqimen2.qimen.QimenResult
 import com.potuo.feipanqimen2.ui.theme.CardShape
+import com.potuo.feipanqimen2.ui.theme.LocalQimenPalette
 import com.potuo.feipanqimen2.ui.theme.PalaceShape
-import com.potuo.feipanqimen2.ui.theme.QimenColors
 import com.potuo.feipanqimen2.ui.theme.QimenDimens
 import kotlinx.coroutines.delay
 
@@ -100,7 +100,7 @@ fun QimenBoard(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .border(QimenDimens.gridBorder, QimenColors.Gold.copy(alpha = 0.6f), PalaceShape)
+            .border(QimenDimens.gridBorder, LocalQimenPalette.current.gold.copy(alpha = 0.6f), PalaceShape)
             .padding(QimenDimens.spacingXs),
         verticalArrangement = Arrangement.spacedBy(QimenDimens.gridGap),
     ) {
@@ -152,23 +152,22 @@ private fun PalaceCell(
     modifier: Modifier = Modifier,
 ) {
     val isSpecial = isZhiFu || isZhiShi
+    val palette = LocalQimenPalette.current
     val borderColor = when {
-        isCenter -> QimenColors.Gold
-        isSpecial -> QimenColors.Cinnabar
-        else -> if (dark) QimenColors.GridBorderDark.copy(alpha = 0.6f)
-        else QimenColors.GridBorderLight.copy(alpha = 0.5f)
+        isCenter -> palette.gold
+        isSpecial -> palette.cinnabar
+        else -> palette.gridBorder.copy(alpha = if (dark) 0.6f else 0.5f)
     }
     val borderWidth = when {
         isCenter || isSpecial -> 1.5.dp
         else -> QimenDimens.gridBorder
     }
     val bgColor = when {
-        isCenter && dark -> QimenColors.CenterBgDark
-        isCenter -> QimenColors.CenterBgLight
-        dark -> Color(0xFF2A2D33)
-        else -> QimenColors.PaperLight.copy(alpha = 0.55f)
+        isCenter -> palette.centerBg
+        dark -> palette.palaceBg
+        else -> palette.paper.copy(alpha = 0.55f)
     }
-    val textColor = if (dark) Color(0xFFE6E1E5) else QimenColors.InkText
+    val textColor = palette.inkText
 
     // 值符/值使宫：入场后朱砂光晕扩散一次
     var glowStage by remember { mutableStateOf(0) }
@@ -190,7 +189,7 @@ private fun PalaceCell(
         label = "zhiGlow",
     )
     val glowWidth = 2.5.dp * glow
-    val glowColor = QimenColors.Cinnabar.copy(alpha = 0.5f * glow)
+    val glowColor = LocalQimenPalette.current.cinnabar.copy(alpha = 0.5f * glow)
 
     Box(
         modifier = modifier
@@ -226,7 +225,7 @@ private fun PalaceCell(
                 info.god,
                 fontSize = 8.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = if (dark) Color(0xFFB8B2A0) else QimenColors.Slate,
+                color = LocalQimenPalette.current.secondaryText,
                 textAlign = TextAlign.Center,
                 lineHeight = 10.sp,
             )
@@ -235,7 +234,7 @@ private fun PalaceCell(
                 Box(
                     modifier = Modifier
                         .size(26.dp)
-                        .border(1.dp, QimenColors.Gold, CircleShape),
+                        .border(1.dp, LocalQimenPalette.current.gold, CircleShape),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
@@ -249,7 +248,7 @@ private fun PalaceCell(
                 Text(
                     info.heavenStem,
                     fontSize = 8.sp,
-                    color = QimenColors.Gold,
+                    color = LocalQimenPalette.current.gold,
                     textAlign = TextAlign.Center,
                     lineHeight = 9.sp,
                 )
@@ -284,7 +283,7 @@ private fun PalaceCell(
                 "(${info.earthStem})",
                 fontSize = 9.sp,
                 fontWeight = FontWeight.Medium,
-                color = QimenColors.Gold,
+                color = LocalQimenPalette.current.gold,
                 textAlign = TextAlign.Center,
                 lineHeight = 11.sp,
             )
@@ -305,7 +304,7 @@ fun MiniBoard(
     Column(
         modifier = modifier
             .aspectRatio(1f)
-            .border(0.5.dp, QimenColors.Gold.copy(alpha = 0.4f), PalaceShape)
+            .border(0.5.dp, LocalQimenPalette.current.gold.copy(alpha = 0.4f), PalaceShape)
             .padding(2.dp),
     ) {
         gridOrder.chunked(3).forEach { row ->
@@ -322,7 +321,7 @@ fun MiniBoard(
                             .weight(1f)
                             .fillMaxHeight()
                             .background(
-                                if (isZhiFu) QimenColors.Cinnabar.copy(alpha = 0.2f)
+                                if (isZhiFu) LocalQimenPalette.current.cinnabar.copy(alpha = 0.2f)
                                 else Color.Transparent,
                             )
                             .border(0.3.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
@@ -332,7 +331,7 @@ fun MiniBoard(
                             info.star.removePrefix("天"),
                             fontSize = 8.sp,
                             fontWeight = if (isZhiFu) FontWeight.Bold else FontWeight.Normal,
-                            color = if (isZhiFu) QimenColors.Cinnabar
+                            color = if (isZhiFu) LocalQimenPalette.current.cinnabar
                             else MaterialTheme.colorScheme.onSurface,
                             textAlign = TextAlign.Center,
                             maxLines = 1,
@@ -362,7 +361,7 @@ fun HuangLiCard(
                 modifier = Modifier
                     .width(QimenDimens.spacingXs)
                     .height(if (expanded) 56.dp else 40.dp)
-                    .background(QimenColors.Cinnabar, CircleShape),
+                    .background(LocalQimenPalette.current.cinnabar, CircleShape),
             )
             Column(modifier = Modifier.padding(start = QimenDimens.spacingMd)) {
                 Row(

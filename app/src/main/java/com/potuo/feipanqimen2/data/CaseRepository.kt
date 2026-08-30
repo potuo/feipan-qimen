@@ -15,6 +15,15 @@ data class ExportBundle(
     val cases: List<CaseEntity>,
 )
 
+/** 类别统计：类别名 + 案例数 */
+data class CategoryStat(
+    val category: String,
+    val count: Int,
+)
+
+/** 案例事项类别选项（保存/筛选/统计共用） */
+val CASE_CATEGORIES = listOf("求财", "事业", "婚姻", "健康", "出行", "考试", "其他")
+
 class CaseRepository(private val dao: CaseDao) {
     private val gson = Gson()
 
@@ -32,6 +41,13 @@ class CaseRepository(private val dao: CaseDao) {
     suspend fun delete(caseEntity: CaseEntity) = dao.delete(caseEntity)
 
     suspend fun getAllCasesOnce(): List<CaseEntity> = dao.getAllCasesOnce()
+
+    fun getCasesByCategory(category: String): Flow<List<CaseEntity>> = dao.getCasesByCategory(category)
+
+    fun searchCasesByCategory(query: String, category: String): Flow<List<CaseEntity>> =
+        dao.searchCasesByCategory(query, category)
+
+    fun categoryStats(): Flow<List<CategoryStat>> = dao.categoryStats()
 
     fun serializePan(result: QimenResult): String = gson.toJson(result)
 

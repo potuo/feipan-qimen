@@ -44,4 +44,26 @@ interface CaseDao {
 
     @Query("SELECT * FROM cases ORDER BY createTime DESC")
     suspend fun getAllCasesOnce(): List<CaseEntity>
+
+    @Query("SELECT * FROM cases WHERE category = :category ORDER BY createTime DESC")
+    fun getCasesByCategory(category: String): Flow<List<CaseEntity>>
+
+    @Query(
+        """
+        SELECT * FROM cases WHERE category = :category AND (
+            siZhu LIKE '%' || :query || '%' OR
+            CAST(juNumber AS TEXT) LIKE '%' || :query || '%' OR
+            jieQi LIKE '%' || :query || '%' OR
+            tags LIKE '%' || :query || '%' OR
+            note LIKE '%' || :query || '%' OR
+            panDate LIKE '%' || :query || '%' OR
+            dunType LIKE '%' || :query || '%'
+        )
+        ORDER BY createTime DESC
+        """,
+    )
+    fun searchCasesByCategory(query: String, category: String): Flow<List<CaseEntity>>
+
+    @Query("SELECT category, COUNT(*) AS count FROM cases GROUP BY category ORDER BY count DESC")
+    fun categoryStats(): Flow<List<CategoryStat>>
 }

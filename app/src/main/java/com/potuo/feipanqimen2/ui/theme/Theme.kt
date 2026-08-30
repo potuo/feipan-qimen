@@ -4,6 +4,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 
 // 主题：古典金（黄/红/金）浅色 / 暗色 两态
@@ -118,10 +119,18 @@ fun FeipanQimenTheme(
         isDark -> ClassicDarkColors
         else -> ClassicLightColors
     }
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = QimenTypography,
-        shapes = QimenShapes,
-        content = content,
-    )
+    val qimenPalette = when {
+        themeName == "ziwei" && isDark -> QimenPalettes.ZiweiDark
+        themeName == "ziwei" -> QimenPalettes.ZiweiLight
+        isDark -> QimenPalettes.ClassicDark
+        else -> QimenPalettes.ClassicLight
+    }
+    CompositionLocalProvider(LocalQimenPalette provides qimenPalette) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = QimenTypography,
+            shapes = QimenShapes,
+            content = content,
+        )
+    }
 }

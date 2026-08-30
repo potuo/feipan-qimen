@@ -2,4 +2,6 @@
 <paths>
     <!-- 更新 APK 缓存目录 -->
     <cache-path name="apk_cache" path="update/" />
+    <!-- 分享图缓存目录 -->
+    <cache-path name="share" path="share/" />
 </paths>

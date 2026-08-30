@@ -1,7 +1,6 @@
 package com.potuo.feipanqimen2.ui
 
-import android.content.Intent
-import android.net.Uri
+import android.content.Context
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -17,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
@@ -28,6 +28,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -43,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.potuo.feipanqimen2.UpdateChecker
@@ -61,6 +63,14 @@ import java.util.Locale
 private data class ChangeLogEntry(val version: String, val date: String, val items: List<String>)
 
 private val changeLogs = listOf(
+    ChangeLogEntry("v2.6", "2026-08-31", listOf(
+        "新增格局检测（击刑/入墓/门迫/伏吟反吟/守门/空亡）",
+        "新增真太阳时校正（经度设置，跨时辰提示）",
+        "新增盘面分享图（一键生成图片分享）",
+        "案例库新增事项类别（筛选/统计）",
+        "盘面配色跟随主题（古典金/紫微）",
+        "侧滑栏新增飞盘总纲（内置教材三卷）与关于",
+    )),
     ChangeLogEntry("v2.5.1", "2026-08-31", listOf(
         "新增检查更新（自动检测新版本）",
         "新增紫微主题配色（浅色 / 暗色两态）",
@@ -252,6 +262,11 @@ fun SettingsScreen(
     }
 
     var logSizeKB by remember { mutableLongStateOf(LogManager.totalSizeKB(context)) }
+    var longitudeText by remember {
+        val v = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
+            .getFloat("longitude", 120.0f)
+        mutableStateOf(if (v % 1f == 0f) v.toInt().toString() else v.toString())
+    }
 
     Scaffold { padding ->
         Column(
@@ -343,6 +358,33 @@ fun SettingsScreen(
                 ) { Text("清空日志") }
             }
 
+            // ── 排盘设置 ──
+            CollapsibleSection(title = "排盘设置") {
+                Text(
+                    "所在经度（东经）：",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                OutlinedTextField(
+                    value = longitudeText,
+                    onValueChange = { input ->
+                        longitudeText = input.filter { it.isDigit() || it == '.' }
+                        input.toFloatOrNull()?.let { v ->
+                            if (v in 73.0f..136.0f) {
+                                context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
+                                    .edit().putFloat("longitude", v).apply()
+                            }
+                        }
+                    },
+                    label = { Text("东经度数（默认 120）") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = QimenDimens.spacingSm),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                )
+            }
+
             // ── 检查更新 ──
             CollapsibleSection(title = "检查更新", defaultExpanded = true) {
                 Text(
@@ -387,63 +429,6 @@ fun SettingsScreen(
                     }
                 }
             }
-
-            // ── 关于 ──
-            CollapsibleSection(title = "关于") {
-                Text(
-                    "飞盘奇门遁甲排盘",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                )
-                Text(
-                    "鸣法体系 · 值使飞宫法",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    "版本 v$localVersion",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp),
-                )
-                Text(
-                    "作者：Potuo",
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(top = 4.dp),
-                )
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            runCatching {
-                                context.startActivity(
-                                    Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/potuo/feipan-qimen")),
-                                )
-                            }
-                        }
-                        .padding(top = QimenDimens.spacingSm),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        "GitHub：potuo/feipan-qimen ↗",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                }
-                Text(
-                    "MIT License",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = QimenDimens.spacingSm),
-                )
-            }
-
-            Text(
-                "飞盘奇门遁甲 v$localVersion\n鸣法体系 · 值使飞宫法",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = QimenDimens.spacingLg),
-            )
         }
     }
 

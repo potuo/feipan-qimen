@@ -35,7 +35,9 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -75,10 +77,12 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.potuo.feipanqimen2.UpdateChecker
 import com.potuo.feipanqimen2.log.LogManager
+import com.potuo.feipanqimen2.ui.AboutScreen
 import com.potuo.feipanqimen2.ui.CaseDetailScreen
 import com.potuo.feipanqimen2.ui.CaseListScreen
 import com.potuo.feipanqimen2.ui.HuangLiScreen
 import com.potuo.feipanqimen2.ui.InputScreen
+import com.potuo.feipanqimen2.ui.LearnScreen
 import com.potuo.feipanqimen2.ui.ResultScreen
 import com.potuo.feipanqimen2.ui.SettingsScreen
 import com.potuo.feipanqimen2.ui.theme.FeipanQimenTheme
@@ -91,6 +95,8 @@ private enum class Section(val title: String) {
     PAN("飞盘排盘"),
     CASES("案例库"),
     HUANGLI("黄历"),
+    LEARN("飞盘总纲"),
+    ABOUT("关于"),
     SETTINGS("设置"),
 }
 
@@ -246,6 +252,24 @@ fun MainApp(
                     icon = { Icon(Icons.Default.CalendarMonth, contentDescription = null) },
                 )
                 NavigationDrawerItem(
+                    label = { Text("飞盘总纲") },
+                    selected = section == Section.LEARN,
+                    onClick = {
+                        section = Section.LEARN
+                        scope.launch { drawerState.close() }
+                    },
+                    icon = { Icon(Icons.Default.MenuBook, contentDescription = null) },
+                )
+                NavigationDrawerItem(
+                    label = { Text("关于") },
+                    selected = section == Section.ABOUT,
+                    onClick = {
+                        section = Section.ABOUT
+                        scope.launch { drawerState.close() }
+                    },
+                    icon = { Icon(Icons.Default.Info, contentDescription = null) },
+                )
+                NavigationDrawerItem(
                     label = { Text("设置") },
                     selected = section == Section.SETTINGS,
                     onClick = {
@@ -335,6 +359,8 @@ fun MainApp(
                         },
                     )
                     section == Section.HUANGLI -> HuangLiScreen()
+                    section == Section.LEARN -> LearnScreen(onBack = { section = Section.PAN })
+                    section == Section.ABOUT -> AboutScreen()
                     else -> SettingsScreen(
                         viewModel = viewModel,
                         isDark = isDark,

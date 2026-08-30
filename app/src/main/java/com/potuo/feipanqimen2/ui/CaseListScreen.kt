@@ -3,6 +3,8 @@ package com.potuo.feipanqimen2.ui
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,6 +17,8 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -29,6 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.potuo.feipanqimen2.data.CASE_CATEGORIES
 import com.potuo.feipanqimen2.data.CaseEntity
 import com.potuo.feipanqimen2.ui.components.EmptyState
 import com.potuo.feipanqimen2.ui.components.MiniBoard
@@ -40,7 +45,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CaseListScreen(
     viewModel: MainViewModel,
@@ -50,6 +55,8 @@ fun CaseListScreen(
 ) {
     val cases by viewModel.cases.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
+    val categoryFilter by viewModel.categoryFilter.collectAsState()
+    val categoryStats by viewModel.categoryStats.collectAsState()
     val dateFormat = SimpleDateFormat("MM-dd HH:mm", Locale.CHINA)
 
     Column(
@@ -66,6 +73,34 @@ fun CaseListScreen(
                     .padding(vertical = QimenDimens.spacingSm),
                 singleLine = true,
             )
+
+            // 类别筛选
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm),
+                verticalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm),
+            ) {
+                (listOf("全部") + CASE_CATEGORIES).forEach { c ->
+                    FilterChip(
+                        selected = categoryFilter == c,
+                        onClick = { viewModel.setCategoryFilter(c) },
+                        label = { Text(c) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        ),
+                    )
+                }
+            }
+
+            // 统计（仅显示有案例的类别）
+            if (categoryStats.isNotEmpty()) {
+                Text(
+                    categoryStats.joinToString("  ") { "${it.category}×${it.count}" },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = QimenDimens.spacingSm),
+                )
+            }
 
             if (cases.isEmpty()) {
                 EmptyState(
@@ -120,6 +155,15 @@ private fun CaseCard(case: CaseEntity, dateFormat: SimpleDateFormat, onClick: ()
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+            if (case.category.isNotBlank()) {
+                Text(
+                    "［${case.category}］",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
             if (case.tags.isNotBlank()) {
                 Text(
                     case.tags,

@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -36,6 +37,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _note = MutableStateFlow("")
     val note: StateFlow<String> = _note.asStateFlow()
 
+    private val _selectedCategory = MutableStateFlow("其他")
+    val selectedCategory: StateFlow<String> = _selectedCategory.asStateFlow()
+
     private val _tags = MutableStateFlow("")
     val tags: StateFlow<String> = _tags.asStateFlow()
 
@@ -48,18 +52,27 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
+    private val _categoryFilter = MutableStateFlow("全部")
+    val categoryFilter: StateFlow<String> = _categoryFilter.asStateFlow()
+
     private val _message = MutableStateFlow<String?>(null)
     val message: StateFlow<String?> = _message.asStateFlow()
 
-    val cases = _searchQuery.flatMapLatest { q ->
-        repository.searchCases(q)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val cases = combine(_searchQuery, _categoryFilter) { q, c -> q to c }
+        .flatMapLatest { (q, c) ->
+            if (c == "全部") repository.searchCases(q) else repository.searchCasesByCategory(q, c)
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val categoryStats = repository.categoryStats()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun setDate(date: LocalDate) { _selectedDate.value = date }
     fun setHourIndex(index: Int) { _selectedHourIndex.value = index }
     fun setNote(note: String) { _note.value = note }
     fun setTags(tags: String) { _tags.value = tags }
+    fun setCategory(category: String) { _selectedCategory.value = category }
     fun setSearchQuery(query: String) { _searchQuery.value = query }
+    fun setCategoryFilter(category: String) { _categoryFilter.value = category }
     fun clearMessage() { _message.value = null }
 
     fun calculate() {
@@ -94,6 +107,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     dunType = result.dunType,
                     juNumber = result.juNumber,
                     panJson = repository.serializePan(result),
+                    category = _selectedCategory.value,
                     tags = _tags.value,
                     note = _note.value,
                     huangLi = huangLi?.summary ?: "",
