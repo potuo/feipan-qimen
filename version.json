@@ -1,5 +1,5 @@
 {
-  "version": "2.6.3",
-  "apk_url": "https://github.com/potuo/feipan-qimen/releases/download/v2.6.3/app-debug.apk",
-  "notes": "时辰3×4、类别4+3、更新日志版本过滤、启动动画同步紫微"
+  "version": "2.6.4",
+  "apk_url": "https://github.com/potuo/feipan-qimen/releases/download/v2.6.4/app-debug.apk",
+  "notes": "更名天禽，新图标八卦天禽，启动动画重制"
 }

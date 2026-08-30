@@ -14,6 +14,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -67,7 +68,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -91,6 +94,8 @@ import com.potuo.feipanqimen2.ui.theme.QimenColors
 import com.potuo.feipanqimen2.viewmodel.MainViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.cos
+import kotlin.math.sin
 
 private enum class Section(val title: String) {
     PAN("飞盘排盘"),
@@ -408,6 +413,18 @@ private fun SplashScreen() {
             .background(bg),
         contentAlignment = Alignment.Center,
     ) {
+        // 八卦金点（固定环绕）
+        Canvas(modifier = Modifier.size(132.dp)) {
+            val ring = size.minDimension * 0.46f
+            repeat(8) { i ->
+                val a = Math.toRadians(i * 45.0)
+                drawCircle(
+                    color = palette.gold.copy(alpha = 0.85f),
+                    radius = size.minDimension * 0.035f,
+                    center = Offset(center.x + (ring * cos(a)).toFloat(), center.y + (ring * sin(a)).toFloat()),
+                )
+            }
+        }
         Box(
             modifier = Modifier
                 .size(120.dp)
@@ -422,11 +439,54 @@ private fun SplashScreen() {
                     .border(1.dp, palette.gold.copy(alpha = ringAlpha * 0.7f), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(26.dp)
-                        .background(palette.cinnabar, CircleShape),
-                )
+                // 几何天禽（圆头 + 双三角翼 + 身 + 尾 + 朱砂眼）
+                Canvas(modifier = Modifier.size(54.dp)) {
+                    val c = center
+                    val u = size.minDimension
+                    val gold = palette.gold
+                    drawCircle(color = gold, radius = u * 0.13f, center = Offset(c.x, c.y - u * 0.26f))
+                    drawCircle(
+                        color = palette.cinnabar,
+                        radius = u * 0.06f,
+                        center = Offset(c.x + u * 0.065f, c.y - u * 0.235f),
+                    )
+                    drawPath(
+                        Path().apply {
+                            moveTo(c.x - u * 0.38f, c.y + u * 0.08f)
+                            lineTo(c.x - u * 0.05f, c.y + u * 0.08f)
+                            lineTo(c.x - u * 0.21f, c.y - u * 0.26f)
+                            close()
+                        },
+                        color = gold,
+                    )
+                    drawPath(
+                        Path().apply {
+                            moveTo(c.x + u * 0.38f, c.y + u * 0.08f)
+                            lineTo(c.x + u * 0.05f, c.y + u * 0.08f)
+                            lineTo(c.x + u * 0.21f, c.y - u * 0.26f)
+                            close()
+                        },
+                        color = gold,
+                    )
+                    drawPath(
+                        Path().apply {
+                            moveTo(c.x - u * 0.06f, c.y + u * 0.12f)
+                            lineTo(c.x + u * 0.06f, c.y + u * 0.12f)
+                            lineTo(c.x, c.y + u * 0.30f)
+                            close()
+                        },
+                        color = gold,
+                    )
+                    drawPath(
+                        Path().apply {
+                            moveTo(c.x, c.y + u * 0.30f)
+                            lineTo(c.x - u * 0.05f, c.y + u * 0.42f)
+                            lineTo(c.x + u * 0.05f, c.y + u * 0.42f)
+                            close()
+                        },
+                        color = gold,
+                    )
+                }
             }
         }
         Column(
@@ -439,14 +499,14 @@ private fun SplashScreen() {
                 if (visible) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            "飞盘奇门遁甲",
+                            "天禽",
                             fontSize = 26.sp,
                             fontWeight = FontWeight.Bold,
                             color = titleColor,
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            "据《奇门基础资料 2023版教》 · 鸣法体系",
+                            "飞盘奇门 · 据《奇门基础资料 2023版教》鸣法体系",
                             fontSize = 12.sp,
                             color = palette.gold,
                             textAlign = TextAlign.Center,
@@ -475,7 +535,7 @@ private fun DrawerHeader() {
             Text("飞", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
         }
         Text(
-            "飞盘奇门",
+            "天禽",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold,
             maxLines = 1,

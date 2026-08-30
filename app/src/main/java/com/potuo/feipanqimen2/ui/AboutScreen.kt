@@ -162,10 +162,10 @@ fun AboutScreen() {
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         ) {
             Column(modifier = Modifier.padding(QimenDimens.spacingLg)) {
-                Text("飞盘奇门遁甲排盘", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text("天禽", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(QimenDimens.spacingXs))
                 Text(
-                    "鸣法体系 · 值使飞宫法 · 天禽居中 · 星门顺飞",
+                    "飞盘奇门 · 鸣法体系 · 值使飞宫法 · 天禽居中 · 星门顺飞",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
