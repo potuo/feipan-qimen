@@ -29,3 +29,7 @@ logo_mockup_*.png
 logo_ai/
 logo_vector_preview*.png
 logo_v*.png
+
+# 脚本工具（本地开发用，含本机绝对路径，勿上传）
+*.py
+logo_*.png
