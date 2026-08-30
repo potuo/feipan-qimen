@@ -22,6 +22,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -37,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.google.gson.Gson
@@ -68,6 +70,7 @@ fun AboutScreen() {
     // ── 检查更新状态 ──
     var checking by remember { mutableStateOf(false) }
     var downloading by remember { mutableStateOf(false) }
+    var downloadProgress by remember { mutableStateOf(0f) }
     var pendingUpdate by remember { mutableStateOf<UpdateInfo?>(null) }
 
     // ── 应用日志状态 ──
@@ -116,9 +119,12 @@ fun AboutScreen() {
         if (downloading) return
         scope.launch {
             downloading = true
+            downloadProgress = 0f
             val dir = File(context.cacheDir, "update").apply { mkdirs() }
             val apk = File(dir, "feipan-qimen-v${info.version}.apk")
-            val ok = UpdateChecker.downloadApk(info.apkUrl, apk)
+            val ok = UpdateChecker.downloadApk(info.apkUrl, apk) { p ->
+                scope.launch { downloadProgress = p }
+            }
             downloading = false
             if (ok) {
                 Toast.makeText(context, "下载完成，正在安装…", Toast.LENGTH_SHORT).show()
@@ -222,6 +228,24 @@ fun AboutScreen() {
                         checking -> "检查中…"
                         else -> "检查更新"
                     },
+                )
+            }
+            // 下载进度条
+            if (downloading) {
+                LinearProgressIndicator(
+                    progress = { downloadProgress.coerceIn(0f, 1f) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = QimenDimens.spacingMd),
+                )
+                Text(
+                    "下载进度：${(downloadProgress.coerceIn(0f, 1f) * 100).toInt()}%",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 2.dp),
+                    textAlign = TextAlign.Center,
                 )
             }
         }

@@ -137,16 +137,27 @@ object UpdateChecker {
         }.getOrNull()
     }
 
-    /** 下载 APK 到目标文件，成功返回 true */
-    suspend fun downloadApk(url: String, dest: File): Boolean = withContext(Dispatchers.IO) {
+    /** 下载 APK 到目标文件，成功返回 true；onProgress 回传 0f~1f 进度 */
+    suspend fun downloadApk(url: String, dest: File, onProgress: (Float) -> Unit = {}): Boolean = withContext(Dispatchers.IO) {
         runCatching {
             val conn = URL(url).openConnection() as HttpURLConnection
             conn.connectTimeout = 10000
             conn.readTimeout = 30000
             conn.setRequestProperty("User-Agent", "feipan-qimen")
             if (conn.responseCode != 200) return@runCatching false
+            val total = conn.contentLengthLong
+            var downloaded = 0L
             conn.inputStream.use { input ->
-                dest.outputStream().use { output -> input.copyTo(output) }
+                dest.outputStream().use { output ->
+                    val buf = ByteArray(64 * 1024)
+                    while (true) {
+                        val n = input.read(buf)
+                        if (n < 0) break
+                        output.write(buf, 0, n)
+                        downloaded += n
+                        if (total > 0) onProgress(downloaded.toFloat() / total.toFloat())
+                    }
+                }
             }
             dest.length() > 0
         }.getOrDefault(false)
