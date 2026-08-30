@@ -143,6 +143,11 @@ fun AboutScreen() {
         changelogLoading = false
     }
 
+    // 只显示当前版本及更早版本的更新日志（如当前 v2.6，看不到 v2.6.2 的日志）
+    val visibleLogs = remember(changelog, versionName) {
+        changelog?.filter { UpdateChecker.compareVersions(it.version, versionName) <= 0 }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -261,14 +266,13 @@ fun AboutScreen() {
                 ) {
                     CircularProgressIndicator(modifier = Modifier.height(28.dp))
                 }
-                changelogFailed && changelog == null -> Text(
+                changelogFailed && visibleLogs.isNullOrEmpty() -> Text(
                     "更新日志加载失败（网络不可用）",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                changelog != null -> {
-                    val logs = changelog ?: emptyList()
-                    logs.forEach { log ->
+                !visibleLogs.isNullOrEmpty() -> {
+                    visibleLogs.forEach { log ->
                         Column(modifier = Modifier.padding(bottom = QimenDimens.spacingLg)) {
                             Text(
                                 "${log.version}（${log.date}）",

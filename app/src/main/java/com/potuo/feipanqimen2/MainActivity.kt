@@ -86,6 +86,7 @@ import com.potuo.feipanqimen2.ui.LearnScreen
 import com.potuo.feipanqimen2.ui.ResultScreen
 import com.potuo.feipanqimen2.ui.SettingsScreen
 import com.potuo.feipanqimen2.ui.theme.FeipanQimenTheme
+import com.potuo.feipanqimen2.ui.theme.LocalQimenPalette
 import com.potuo.feipanqimen2.ui.theme.QimenColors
 import com.potuo.feipanqimen2.viewmodel.MainViewModel
 import kotlinx.coroutines.delay
@@ -182,7 +183,7 @@ fun MainApp(
     }
 
     if (showSplash) {
-        SplashScreen(isDark = isDark)
+        SplashScreen()
         return
     }
 
@@ -375,11 +376,12 @@ fun MainApp(
     }
 }
 
-/** 启动动画：罗盘金环旋转 + 标题浮现（跟随主题明暗） */
+/** 启动动画：罗盘金环旋转 + 标题浮现（跟随主题配色与明暗） */
 @Composable
-private fun SplashScreen(isDark: Boolean) {
-    val bg = if (isDark) Color(0xFF1A1C20) else QimenColors.PaperLight
-    val titleColor = if (isDark) Color(0xFFF2EDE3) else QimenColors.InkText
+private fun SplashScreen() {
+    val palette = LocalQimenPalette.current
+    val bg = palette.paper
+    val titleColor = palette.inkText
     val transition = rememberInfiniteTransition(label = "splash")
     val rotation by transition.animateFloat(
         initialValue = 0f,
@@ -410,20 +412,20 @@ private fun SplashScreen(isDark: Boolean) {
             modifier = Modifier
                 .size(120.dp)
                 .rotate(rotation)
-                .border(2.dp, QimenColors.Gold.copy(alpha = ringAlpha), CircleShape),
+                .border(2.dp, palette.gold.copy(alpha = ringAlpha), CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Box(
                 modifier = Modifier
                     .size(88.dp)
                     .rotate(-rotation * 1.6f)
-                    .border(1.dp, QimenColors.Gold.copy(alpha = ringAlpha * 0.7f), CircleShape),
+                    .border(1.dp, palette.gold.copy(alpha = ringAlpha * 0.7f), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
                 Box(
                     modifier = Modifier
                         .size(26.dp)
-                        .background(QimenColors.Cinnabar, CircleShape),
+                        .background(palette.cinnabar, CircleShape),
                 )
             }
         }
@@ -446,7 +448,7 @@ private fun SplashScreen(isDark: Boolean) {
                         Text(
                             "据《奇门基础资料 2023版教》 · 鸣法体系",
                             fontSize = 12.sp,
-                            color = QimenColors.Gold,
+                            color = palette.gold,
                             textAlign = TextAlign.Center,
                         )
                     }
@@ -467,7 +469,7 @@ private fun DrawerHeader() {
         Box(
             modifier = Modifier
                 .size(36.dp)
-                .background(QimenColors.Cinnabar, CircleShape),
+                .background(LocalQimenPalette.current.cinnabar, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Text("飞", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)

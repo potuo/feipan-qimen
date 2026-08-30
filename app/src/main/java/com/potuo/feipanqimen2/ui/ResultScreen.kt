@@ -199,20 +199,24 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center,
         )
-        FlowRow(
-            horizontalArrangement = Arrangement.Center,
-            verticalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm),
-        ) {
-            CASE_CATEGORIES.forEach { c ->
-                FilterChip(
-                    selected = category == c,
-                    onClick = { viewModel.setCategory(c) },
-                    label = { Text(c) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    ),
-                )
+        // 事项类别：4 + 3 两行，间距宽松
+        CASE_CATEGORIES.chunked(4).forEach { rowNames ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(QimenDimens.spacingMd),
+            ) {
+                rowNames.forEach { c ->
+                    FilterChip(
+                        selected = category == c,
+                        onClick = { viewModel.setCategory(c) },
+                        label = { Text(c) },
+                        modifier = Modifier.weight(1f),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        ),
+                    )
+                }
             }
         }
 

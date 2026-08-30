@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -102,21 +103,26 @@ fun InputScreen(viewModel: MainViewModel, onCalculate: () -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center,
         )
-        FlowRow(
-            horizontalArrangement = Arrangement.Center,
-            verticalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm),
-        ) {
-            QimenConstants.HOUR_NAMES.forEachIndexed { index, name ->
-                val selected = selectedHourIndex == index
-                FilterChip(
-                    selected = selected,
-                    onClick = { viewModel.setHourIndex(index) },
-                    label = { Text(name) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    ),
-                )
+        // 十二时辰：3 行 × 4 个
+        QimenConstants.HOUR_NAMES.chunked(4).forEach { rowNames ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm),
+            ) {
+                rowNames.forEach { name ->
+                    val index = QimenConstants.HOUR_NAMES.indexOf(name)
+                    val selected = selectedHourIndex == index
+                    FilterChip(
+                        selected = selected,
+                        onClick = { viewModel.setHourIndex(index) },
+                        label = { Text(name) },
+                        modifier = Modifier.weight(1f),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        ),
+                    )
+                }
             }
         }
 
