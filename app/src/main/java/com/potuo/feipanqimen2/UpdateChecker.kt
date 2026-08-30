@@ -18,6 +18,13 @@ data class UpdateInfo(
     val notes: String?,
 )
 
+/** 更新日志条目（联网拉取自仓库 changelog.json） */
+data class ChangelogEntry(
+    val version: String,
+    val date: String,
+    val items: List<String>,
+)
+
 /**
  * 无服务器检测更新：GitHub Releases API 为主，jsDelivr / raw 静态 version.json 兜底。
  * 客户端只需拿远程最新版本号与本地比对，需要时下载 APK 安装。
@@ -28,6 +35,8 @@ object UpdateChecker {
     private const val GITHUB_API = "https://api.github.com/repos/$REPO/releases/latest"
     private const val JS_DELIVR = "https://cdn.jsdelivr.net/gh/$REPO@master/version.json"
     private const val RAW_GITHUB = "https://raw.githubusercontent.com/$REPO/master/version.json"
+    private const val JS_DELIVR_CHANGELOG = "https://cdn.jsdelivr.net/gh/$REPO@master/changelog.json"
+    private const val RAW_CHANGELOG = "https://raw.githubusercontent.com/$REPO/master/changelog.json"
     private const val CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000L
 
     /** 版本比较：a > b 返回正数，a < b 返回负数，相等返回 0。语义化分段比较，v 前缀忽略。 */
@@ -95,6 +104,36 @@ object UpdateChecker {
             val version = json.getString("version").trimStart('v')
             val apkUrl = json.optString("apk_url").takeIf { it.isNotBlank() } ?: return null
             UpdateInfo(version, apkUrl, json.optString("notes").takeIf { it.isNotBlank() })
+        }.getOrNull()
+    }
+
+    /** 拉取更新日志（jsDelivr 主，raw 兜底），失败返回 null（调用方可回退本地缓存） */
+    suspend fun fetchChangelog(): List<ChangelogEntry>? = withContext(Dispatchers.IO) {
+        fetchChangelogFrom(JS_DELIVR_CHANGELOG) ?: fetchChangelogFrom(RAW_CHANGELOG)
+    }
+
+    private fun fetchChangelogFrom(url: String): List<ChangelogEntry>? {
+        return runCatching {
+            val conn = URL(url).openConnection() as HttpURLConnection
+            conn.connectTimeout = 8000
+            conn.readTimeout = 8000
+            conn.setRequestProperty("User-Agent", "feipan-qimen")
+            if (conn.responseCode != 200) return null
+            val json = JSONObject(conn.inputStream.bufferedReader().use { it.readText() })
+            val arr = json.getJSONArray("logs")
+            buildList {
+                for (i in 0 until arr.length()) {
+                    val e = arr.getJSONObject(i)
+                    val itemsArr = e.getJSONArray("items")
+                    add(
+                        ChangelogEntry(
+                            version = e.getString("version"),
+                            date = e.getString("date"),
+                            items = buildList { for (j in 0 until itemsArr.length()) add(itemsArr.getString(j)) },
+                        ),
+                    )
+                }
+            }
         }.getOrNull()
     }
 
