@@ -232,7 +232,7 @@ fun MainApp(
                     icon = { Icon(Icons.Default.Settings, contentDescription = null) },
                 )
                 Spacer(modifier = Modifier.weight(1f))
-                // 黑白切换按钮
+                // 黑白切换按钮（仅图标，带动效）
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -252,12 +252,6 @@ fun MainApp(
                             modifier = Modifier.size(22.dp),
                         )
                     }
-                    Text(
-                        if (isDark) "切换白色" else "切换暗色",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 10.dp),
-                    )
                 }
                 HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
                 Text(

@@ -194,12 +194,6 @@ fun SettingsScreen(
                         color = MaterialTheme.colorScheme.primary,
                     )
                 }
-                Text(
-                    "古典金为黄红金中式配色；黑白明暗切换在侧滑栏底部按钮。",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp),
-                )
             }
 
             // ── 数据管理 ──

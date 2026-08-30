@@ -7,7 +7,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 // 主题：古典金（黄/红/金）浅色 / 暗色 两态
-// 黑白切换按钮在侧滑栏底部，设置页默认古典金
 
 /** 古典金 · 浅色（宣纸） */
 val ClassicLightColors = lightColorScheme(
