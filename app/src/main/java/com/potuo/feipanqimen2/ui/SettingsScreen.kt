@@ -28,6 +28,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -61,7 +62,7 @@ private data class ChangeLogEntry(val version: String, val date: String, val ite
 
 private val changeLogs = listOf(
     ChangeLogEntry("v2.5.1", "2026-08-31", listOf(
-        "新增检查更新（GitHub 发布源，自动检测新版本）",
+        "新增检查更新（自动检测新版本）",
         "新增紫微主题配色（浅色 / 暗色两态）",
         "设置页新增关于信息（作者 / GitHub 链接）",
     )),
@@ -147,6 +148,29 @@ private fun CollapsibleSection(
     }
 }
 
+/** 配色单选行 */
+@Composable
+private fun ThemeOptionRow(
+    name: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = QimenDimens.spacingSm),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RadioButton(selected = selected, onClick = onClick)
+        Text(
+            name,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.padding(start = 8.dp),
+        )
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
@@ -154,7 +178,7 @@ fun SettingsScreen(
     isDark: Boolean = false,
     themeName: String = "classic",
     onToggleDark: () -> Unit = {},
-    onToggleTheme: () -> Unit = {},
+    onSelectTheme: (String) -> Unit = {},
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -240,23 +264,27 @@ fun SettingsScreen(
         ) {
             // ── 外观 ──
             CollapsibleSection(title = "外观 · 配色", defaultExpanded = true) {
+                Column {
+                    ThemeOptionRow(
+                        name = "古典金",
+                        selected = themeName == "classic",
+                        onClick = { onSelectTheme("classic") },
+                    )
+                    ThemeOptionRow(
+                        name = "紫微",
+                        selected = themeName == "ziwei",
+                        onClick = { onSelectTheme("ziwei") },
+                    )
+                }
+                HorizontalDivider(modifier = Modifier.padding(vertical = QimenDimens.spacingSm))
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(onClick = onToggleTheme)
-                        .padding(vertical = QimenDimens.spacingSm),
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        if (themeName == "ziwei") "紫微" else "古典金",
+                        "明暗",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium,
-                    )
-                    Text(
-                        if (themeName == "ziwei") " · 点击切换古典金" else "（默认） · 点击切换紫微",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 6.dp),
                     )
                     Spacer(modifier = Modifier.weight(1f))
                     Text(
@@ -269,11 +297,6 @@ fun SettingsScreen(
 
             // ── 数据管理 ──
             CollapsibleSection(title = "数据管理") {
-                Text(
-                    "导出全部案例为 JSON 文件，或从 JSON 文件导入案例。",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
                 QimenButton(
                     onClick = {
                         val date = SimpleDateFormat("yyyyMMdd", Locale.CHINA).format(Date())
@@ -293,11 +316,6 @@ fun SettingsScreen(
 
             // ── 应用日志 ──
             CollapsibleSection(title = "应用日志") {
-                Text(
-                    "记录排盘请求、案例操作与崩溃信息。导出后提供给开发者检核。",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
                 Text(
                     "当前日志：${logSizeKB} KB",
                     style = MaterialTheme.typography.labelMedium,
@@ -347,12 +365,6 @@ fun SettingsScreen(
                         },
                     )
                 }
-                Text(
-                    "自动从 GitHub 发布源检测新版本，无需服务器。",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = QimenDimens.spacingSm),
-                )
             }
 
             // ── 更新日志 ──
@@ -419,7 +431,7 @@ fun SettingsScreen(
                     )
                 }
                 Text(
-                    "MIT License · 数据完全本地存储",
+                    "MIT License",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = QimenDimens.spacingSm),

@@ -116,9 +116,9 @@ class MainActivity : ComponentActivity() {
                         isDark = !isDark
                         prefs.edit().putBoolean("is_dark", isDark).apply()
                     },
-                    onToggleTheme = {
-                        themeName = if (themeName == "ziwei") "classic" else "ziwei"
-                        prefs.edit().putString("theme_name", themeName).apply()
+                    onSelectTheme = { name ->
+                        themeName = name
+                        prefs.edit().putString("theme_name", name).apply()
                     },
                 )
             }
@@ -133,7 +133,7 @@ fun MainApp(
     isDark: Boolean = false,
     themeName: String = "classic",
     onToggleDark: () -> Unit = {},
-    onToggleTheme: () -> Unit = {},
+    onSelectTheme: (String) -> Unit = {},
 ) {
     var showSplash by remember { mutableStateOf(true) }
     var section by remember { mutableStateOf(Section.PAN) }
@@ -340,7 +340,7 @@ fun MainApp(
                         isDark = isDark,
                         themeName = themeName,
                         onToggleDark = onToggleDark,
-                        onToggleTheme = onToggleTheme,
+                        onSelectTheme = onSelectTheme,
                         onBack = { section = Section.PAN },
                     )
                 }
