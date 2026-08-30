@@ -1,5 +1,5 @@
 {
-  "version": "2.6.5",
-  "apk_url": "https://github.com/potuo/feipan-qimen/releases/download/v2.6.5/app-debug.apk",
-  "notes": "图标圆环/卦象修正，下载进度条"
+  "version": "2.6.6",
+  "apk_url": "https://github.com/potuo/feipan-qimen/releases/download/v2.6.6/app-debug.apk",
+  "notes": "侧滑栏 Logo 更换为八卦天禽"
 }
