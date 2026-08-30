@@ -56,13 +56,70 @@ val ClassicDarkColors = darkColorScheme(
     outlineVariant = Color(0xFF3A3F47),
 )
 
+// ── 紫微（蓝紫 · 星象）—— 参考 JetSnack 蓝紫 #5A31F4 + 浅青 #4DD0E1 ──
+
+/** 紫微 · 浅色（月白） */
+val ZiweiLightColors = lightColorScheme(
+    primary = Color(0xFF5B3FD4),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFFE6DFFF),
+    onPrimaryContainer = Color(0xFF1A0066),
+    secondary = Color(0xFF00697A),
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFFAEEFFF),
+    onSecondaryContainer = Color(0xFF001F26),
+    tertiary = Color(0xFF6E5BA6),
+    onTertiary = Color.White,
+    background = Color(0xFFFBFAFF),
+    onBackground = Color(0xFF1B1B21),
+    surface = Color(0xFFFBFAFF),
+    onSurface = Color(0xFF1B1B21),
+    surfaceVariant = Color(0xFFE4E1EC),
+    onSurfaceVariant = Color(0xFF47464F),
+    surfaceContainerLow = Color(0xFFF4F1FA),
+    surfaceContainerHigh = Color(0xFFEDEBF5),
+    outline = Color(0xFF777680),
+    outlineVariant = Color(0xFFC8C5D0),
+)
+
+/** 紫微 · 暗色（夜空） */
+val ZiweiDarkColors = darkColorScheme(
+    primary = Color(0xFFCBBEFF),
+    onPrimary = Color(0xFF2E0E9A),
+    primaryContainer = Color(0xFF4423C4),
+    onPrimaryContainer = Color(0xFFE6DFFF),
+    secondary = Color(0xFF4DD0E1),
+    onSecondary = Color(0xFF00363F),
+    secondaryContainer = Color(0xFF004E5A),
+    onSecondaryContainer = Color(0xFFAEEFFF),
+    tertiary = Color(0xFFCFBFF0),
+    onTertiary = Color(0xFF352B52),
+    background = Color(0xFF14121A),
+    onBackground = Color(0xFFE6E1E9),
+    surface = Color(0xFF14121A),
+    onSurface = Color(0xFFE6E1E9),
+    surfaceVariant = Color(0xFF47464F),
+    onSurfaceVariant = Color(0xFFC8C5D0),
+    surfaceContainerLow = Color(0xFF1B1821),
+    surfaceContainerHigh = Color(0xFF26232C),
+    outline = Color(0xFF919099),
+    outlineVariant = Color(0xFF47464F),
+)
+
 @Composable
 fun FeipanQimenTheme(
     isDark: Boolean = false,
+    themeName: String = "classic",
     content: @Composable () -> Unit,
 ) {
+    val colorScheme = when {
+        themeName == "ziwei" && isDark -> ZiweiDarkColors
+        themeName == "ziwei" -> ZiweiLightColors
+        isDark -> ClassicDarkColors
+        else -> ClassicLightColors
+    }
     MaterialTheme(
-        colorScheme = if (isDark) ClassicDarkColors else ClassicLightColors,
+        colorScheme = colorScheme,
         typography = QimenTypography,
         shapes = QimenShapes,
         content = content,

@@ -1,0 +1,128 @@
+package com.potuo.feipanqimen2
+
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import androidx.core.content.FileProvider
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
+import java.io.File
+import java.net.HttpURLConnection
+import java.net.URL
+
+/** 检测更新结果 */
+data class UpdateInfo(
+    val version: String,
+    val apkUrl: String,
+    val notes: String?,
+)
+
+/**
+ * 无服务器检测更新：GitHub Releases API 为主，jsDelivr / raw 静态 version.json 兜底。
+ * 客户端只需拿远程最新版本号与本地比对，需要时下载 APK 安装。
+ */
+object UpdateChecker {
+
+    private const val REPO = "potuo/feipan-qimen"
+    private const val GITHUB_API = "https://api.github.com/repos/$REPO/releases/latest"
+    private const val JS_DELIVR = "https://cdn.jsdelivr.net/gh/$REPO@master/version.json"
+    private const val RAW_GITHUB = "https://raw.githubusercontent.com/$REPO/master/version.json"
+    private const val CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000L
+
+    /** 版本比较：a > b 返回正数，a < b 返回负数，相等返回 0。语义化分段比较，v 前缀忽略。 */
+    fun compareVersions(a: String, b: String): Int {
+        val pa = a.trimStart('v').split('.').mapNotNull { it.toIntOrNull() }
+        val pb = b.trimStart('v').split('.').mapNotNull { it.toIntOrNull() }
+        for (i in 0 until maxOf(pa.size, pb.size)) {
+            val diff = pa.getOrElse(i) { 0 } - pb.getOrElse(i) { 0 }
+            if (diff != 0) return diff
+        }
+        return 0
+    }
+
+    /** 距上次静默检查是否已超过间隔（24h） */
+    fun shouldAutoCheck(context: Context): Boolean {
+        val prefs = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
+        return System.currentTimeMillis() - prefs.getLong("last_update_check", 0L) >= CHECK_INTERVAL_MS
+    }
+
+    fun markChecked(context: Context) {
+        context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
+            .edit().putLong("last_update_check", System.currentTimeMillis()).apply()
+    }
+
+    /** 检查最新版本：GitHub API → jsDelivr → raw，全部失败返回 null（调用方静默处理） */
+    suspend fun checkLatest(): UpdateInfo? = withContext(Dispatchers.IO) {
+        fetchGitHubApi() ?: fetchVersionFile(JS_DELIVR) ?: fetchVersionFile(RAW_GITHUB)
+    }
+
+    private fun fetchGitHubApi(): UpdateInfo? {
+        return runCatching {
+            val conn = URL(GITHUB_API).openConnection() as HttpURLConnection
+            conn.connectTimeout = 8000
+            conn.readTimeout = 8000
+            conn.setRequestProperty("Accept", "application/vnd.github+json")
+            conn.setRequestProperty("User-Agent", "feipan-qimen")
+            if (conn.responseCode != 200) return null
+            val json = JSONObject(conn.inputStream.bufferedReader().use { it.readText() })
+            val tag = json.getString("tag_name").trimStart('v')
+            val assets = json.optJSONArray("assets")
+            var apkUrl: String? = null
+            if (assets != null) {
+                for (i in 0 until assets.length()) {
+                    val asset = assets.getJSONObject(i)
+                    if (asset.optString("name").endsWith(".apk")) {
+                        apkUrl = asset.getString("browser_download_url")
+                        break
+                    }
+                }
+            }
+            if (apkUrl == null) return null
+            UpdateInfo(tag, apkUrl, json.optString("body").takeIf { it.isNotBlank() })
+        }.getOrNull()
+    }
+
+    /** 静态 version.json：{"version":"x.y.z","apk_url":"...","notes":"..."} */
+    private fun fetchVersionFile(url: String): UpdateInfo? {
+        return runCatching {
+            val conn = URL(url).openConnection() as HttpURLConnection
+            conn.connectTimeout = 8000
+            conn.readTimeout = 8000
+            conn.setRequestProperty("User-Agent", "feipan-qimen")
+            if (conn.responseCode != 200) return null
+            val json = JSONObject(conn.inputStream.bufferedReader().use { it.readText() })
+            val version = json.getString("version").trimStart('v')
+            val apkUrl = json.optString("apk_url").takeIf { it.isNotBlank() } ?: return null
+            UpdateInfo(version, apkUrl, json.optString("notes").takeIf { it.isNotBlank() })
+        }.getOrNull()
+    }
+
+    /** 下载 APK 到目标文件，成功返回 true */
+    suspend fun downloadApk(url: String, dest: File): Boolean = withContext(Dispatchers.IO) {
+        runCatching {
+            val conn = URL(url).openConnection() as HttpURLConnection
+            conn.connectTimeout = 10000
+            conn.readTimeout = 30000
+            conn.setRequestProperty("User-Agent", "feipan-qimen")
+            if (conn.responseCode != 200) return@runCatching false
+            conn.inputStream.use { input ->
+                dest.outputStream().use { output -> input.copyTo(output) }
+            }
+            dest.length() > 0
+        }.getOrDefault(false)
+    }
+
+    /** 通过 FileProvider + 系统安装器安装 APK（Android 8+ 需 REQUEST_INSTALL_PACKAGES 与未知来源授权） */
+    fun installApk(context: Context, apkFile: File): Boolean {
+        return runCatching {
+            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", apkFile)
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, "application/vnd.android.package-archive")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+            true
+        }.getOrDefault(false)
+    }
+}

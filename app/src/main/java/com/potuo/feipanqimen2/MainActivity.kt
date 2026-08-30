@@ -73,6 +73,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.potuo.feipanqimen2.UpdateChecker
 import com.potuo.feipanqimen2.log.LogManager
 import com.potuo.feipanqimen2.ui.CaseDetailScreen
 import com.potuo.feipanqimen2.ui.CaseListScreen
@@ -106,12 +107,18 @@ class MainActivity : ComponentActivity() {
         setContent {
             val prefs = remember { getSharedPreferences("app_settings", MODE_PRIVATE) }
             var isDark by remember { mutableStateOf(prefs.getBoolean("is_dark", false)) }
-            FeipanQimenTheme(isDark = isDark) {
+            var themeName by remember { mutableStateOf(prefs.getString("theme_name", "classic") ?: "classic") }
+            FeipanQimenTheme(isDark = isDark, themeName = themeName) {
                 MainApp(
                     isDark = isDark,
+                    themeName = themeName,
                     onToggleDark = {
                         isDark = !isDark
                         prefs.edit().putBoolean("is_dark", isDark).apply()
+                    },
+                    onToggleTheme = {
+                        themeName = if (themeName == "ziwei") "classic" else "ziwei"
+                        prefs.edit().putString("theme_name", themeName).apply()
                     },
                 )
             }
@@ -124,7 +131,9 @@ class MainActivity : ComponentActivity() {
 fun MainApp(
     viewModel: MainViewModel = viewModel(),
     isDark: Boolean = false,
+    themeName: String = "classic",
     onToggleDark: () -> Unit = {},
+    onToggleTheme: () -> Unit = {},
 ) {
     var showSplash by remember { mutableStateOf(true) }
     var section by remember { mutableStateOf(Section.PAN) }
@@ -149,6 +158,20 @@ fun MainApp(
         if (showSplash) {
             delay(1900)
             showSplash = false
+        }
+    }
+
+    // 启动静默检查更新（24h 一次，失败不打扰用户）
+    LaunchedEffect(Unit) {
+        if (UpdateChecker.shouldAutoCheck(context)) {
+            val localVer = runCatching {
+                context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "0"
+            }.getOrDefault("0")
+            val info = UpdateChecker.checkLatest()
+            UpdateChecker.markChecked(context)
+            if (info != null && UpdateChecker.compareVersions(info.version, localVer) > 0) {
+                snackbarHostState.showSnackbar("发现新版本 v${info.version}，可在设置中检查更新")
+            }
         }
     }
 
@@ -315,7 +338,9 @@ fun MainApp(
                     else -> SettingsScreen(
                         viewModel = viewModel,
                         isDark = isDark,
+                        themeName = themeName,
                         onToggleDark = onToggleDark,
+                        onToggleTheme = onToggleTheme,
                         onBack = { section = Section.PAN },
                     )
                 }
