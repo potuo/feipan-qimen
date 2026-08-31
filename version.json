@@ -1,5 +1,5 @@
 {
-  "version": "2.6.10",
-  "apk_url": "https://gitee.com/potuo/feipan-qimen/releases/download/v2.6.10/app-debug.apk",
-  "notes": "启动自动检测更新弹窗 · 新版本首次打开更新日志弹窗"
+  "version": "2.6.11",
+  "apk_url": "https://gitee.com/potuo/feipan-qimen/releases/download/v2.6.11/app-debug.apk",
+  "notes": "新增青玉主题配色 · 学习栏目教材重排（附原图）"
 }
