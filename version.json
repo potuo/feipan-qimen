@@ -1,5 +1,5 @@
 {
-  "version": "2.6.7",
-  "apk_url": "https://github.com/potuo/feipan-qimen/releases/download/v2.6.7/app-debug.apk",
-  "notes": "侧滑栏版本信息动态化"
+  "version": "2.6.8",
+  "apk_url": "https://github.com/potuo/feipan-qimen/releases/download/v2.6.8/app-debug.apk",
+  "notes": "盘面布局重构（六亲/地盘神/旺衰状态/角标）· 修复经度保存"
 }

@@ -9,6 +9,13 @@ data class PalaceInfo(
     val gate: String,
     val earthStem: String,
     val hiddenStem: String? = null,
+    val earthGod: String = "",            // 地盘神（值符神从旬首宫起布）
+    val state: String = "",               // 旺衰状态（旺相休囚死废没胎）
+    val liuQinStar: String = "",          // 星六亲（行3左，以时干为我）
+    val liuQinHeaven: String = "",        // 天盘干六亲（行3右）
+    val liuQinGate: String = "",          // 门六亲（行5左）
+    val liuQinEarth: String = "",         // 地盘干六亲（行5右）
+    val marks: List<String> = emptyList(), // 宫角标记：马/迫/刑/墓
 )
 
 data class QimenResult(

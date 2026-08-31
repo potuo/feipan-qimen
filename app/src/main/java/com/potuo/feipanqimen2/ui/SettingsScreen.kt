@@ -79,7 +79,6 @@ fun SettingsScreen(
             .getFloat("longitude", 120.0f)
         mutableStateOf(if (v % 1f == 0f) v.toInt().toString() else v.toString())
     }
-
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/json"),
     ) { uri -> uri?.let { viewModel.exportAll(it) } }
@@ -140,8 +139,17 @@ fun SettingsScreen(
                 OutlinedTextField(
                     value = longitudeText,
                     onValueChange = { input ->
-                        longitudeText = input.filter { it.isDigit() || it == '.' }
-                        input.toFloatOrNull()?.let { v ->
+                        // 全角数字归一为半角，再过滤非数字/小数点，保证 toFloatOrNull 必然可解析
+                        val half = input.map { ch ->
+                            when {
+                                ch in '０'..'９' -> ('0' + (ch - '０'))
+                                ch == '．' -> '.'
+                                else -> ch
+                            }
+                        }.joinToString("")
+                        val filtered = half.filter { it in '0'..'9' || it == '.' }
+                        longitudeText = filtered
+                        filtered.toFloatOrNull()?.let { v ->
                             if (v in 73.0f..136.0f) {
                                 context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
                                     .edit().putFloat("longitude", v).apply()
@@ -154,6 +162,12 @@ fun SettingsScreen(
                         .padding(top = QimenDimens.spacingSm),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                )
+                Text(
+                    "输入后自动保存（东经 73°~136°，默认 120°）",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = QimenDimens.spacingXs),
                 )
             }
 

@@ -55,11 +55,10 @@ fun InputScreen(viewModel: MainViewModel, onCalculate: () -> Unit) {
     var showDatePicker by remember { mutableStateOf(false) }
 
     // 真太阳时（据教材「抽时选局」：以卦师所在地地方时起卦）
+    // 每次组合直接读设置，避免 remember 缓存旧经度（设置页改完后回输入页立即可见）
     val context = LocalContext.current
-    val longitude = remember {
-        context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
-            .getFloat("longitude", 120.0f)
-    }
+    val longitude = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
+        .getFloat("longitude", 120.0f)
     val hourRange = QimenConstants.HOUR_RANGES[selectedHourIndex]
     val hour = if (hourRange.first == 23) 23 else hourRange.first
     val beijingDt = LocalDateTime.of(selectedDate.year, selectedDate.month, selectedDate.dayOfMonth, hour, 0)
