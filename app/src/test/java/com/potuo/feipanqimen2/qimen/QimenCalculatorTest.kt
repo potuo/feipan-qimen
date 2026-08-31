@@ -111,9 +111,46 @@ class QimenCalculatorTest {
     assertEquals(8, result.zhiShiPalace)
     assertEquals("杜", result.palaces[8]!!.gate)
 
-    // 天禽居中、中门居中
-    assertEquals("天禽", result.palaces[5]!!.star)
-    assertEquals("中", result.palaces[5]!!.gate)
+    // 天禽/中门参与飞布（教材星门皆顺）：天辅6→禽7→心8→柱9→任1→英2→蓬3→芮4→冲5
+    assertEquals("天禽", result.palaces[7]!!.star)
+    assertEquals("天冲", result.palaces[5]!!.star)
+    // 门序顺飞（杜8起）：杜8→中9→开1→惊2→生3→景4→休5→死6→伤7
+    assertEquals("中", result.palaces[9]!!.gate)
+    assertEquals("休", result.palaces[5]!!.gate)
+  }
+
+  @Test
+  fun `2026-08-30 20-36 暗干旬内回绕与参考盘一致`() {
+    val dt = LocalDateTime.of(2026, 8, 30, 20, 36) // 戊戌时·甲午旬·值使杜门落离9
+    val result = QimenCalculator.calculate(dt)
+    // 甲午旬：甲午乙未丙申丁酉戊戌己亥庚子辛丑壬寅癸卯
+    // 从戊戌起正序回绕（跳甲午），阴遁逆飞（9→8→7→6→5→4→3→2→1）
+    assertEquals("戊戌", result.palaces[9]!!.hiddenStem) // 值使宫=时干支
+    assertEquals("己亥", result.palaces[8]!!.hiddenStem)
+    assertEquals("庚子", result.palaces[7]!!.hiddenStem)
+    assertEquals("辛丑", result.palaces[6]!!.hiddenStem)
+    assertEquals("壬寅", result.palaces[5]!!.hiddenStem) // 中宫也布
+    assertEquals("癸卯", result.palaces[4]!!.hiddenStem)
+    assertEquals("乙未", result.palaces[3]!!.hiddenStem) // 回绕跳过甲午
+    assertEquals("丙申", result.palaces[2]!!.hiddenStem)
+    assertEquals("丁酉", result.palaces[1]!!.hiddenStem)
+  }
+
+  @Test
+  fun `2024-12-03 09-19 暗干与教材案例一致`() {
+    val dt = LocalDateTime.of(2024, 12, 3, 9, 19) // 癸巳时·甲申旬·值使开门落乾6
+    val result = QimenCalculator.calculate(dt)
+    assertEquals(6, result.zhiShiPalace)
+    // 教材《暗干排法》案例：6宫癸巳、5宫乙酉、4宫丙戌、3丁亥、2戊子、1己丑、9庚寅、8辛卯、7壬辰
+    assertEquals("癸巳", result.palaces[6]!!.hiddenStem)
+    assertEquals("乙酉", result.palaces[5]!!.hiddenStem)
+    assertEquals("丙戌", result.palaces[4]!!.hiddenStem)
+    assertEquals("丁亥", result.palaces[3]!!.hiddenStem)
+    assertEquals("戊子", result.palaces[2]!!.hiddenStem)
+    assertEquals("己丑", result.palaces[1]!!.hiddenStem)
+    assertEquals("庚寅", result.palaces[9]!!.hiddenStem)
+    assertEquals("辛卯", result.palaces[8]!!.hiddenStem)
+    assertEquals("壬辰", result.palaces[7]!!.hiddenStem)
   }
 
   @Test

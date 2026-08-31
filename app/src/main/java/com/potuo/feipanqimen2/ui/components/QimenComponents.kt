@@ -153,26 +153,21 @@ private fun PalaceCell(
 ) {
     val palette = LocalQimenPalette.current
     val bgColor = when {
-        isCenter -> palette.centerBg
         dark -> palette.palaceBg
         else -> palette.paper.copy(alpha = 0.55f)
     }
     val textColor = palette.inkText
-    val stemColor = palette.gold            // 天干地支（棕金）
+    val subColor = palette.secondaryText      // 神/六亲/地盘神（次级灰，同分享图 cellSub）
+    val stemColor = palette.gold            // 天干地支/角标（棕金）
     val red = palette.cinnabar              // 朱砂（值符星/值使门/日时干/地盘值符）
-    val maColor = if (dark) Color(0xFF7BC98E) else Color(0xFF3E8E5A) // 驿马绿
 
-    // 值符宫（值符星落宫）/ 值使宫（值使门落宫）：朱砂描边强调
+    // 值符宫（值符星落宫）/ 值使宫（值使门落宫）：朱砂描边强调（中宫同普通灰边，以分享图样式为准）
     val isSpecial = info.star == result.zhiFuStar || info.gate == result.zhiShiGate
     val borderColor = when {
         isSpecial -> palette.cinnabar
-        isCenter -> palette.gold
         else -> palette.gridBorder.copy(alpha = if (dark) 0.6f else 0.5f)
     }
-    val borderWidth = when {
-        isSpecial || isCenter -> 1.5.dp
-        else -> QimenDimens.gridBorder
-    }
+    val borderWidth = if (isSpecial) 1.5.dp else QimenDimens.gridBorder
 
     // 红色判定
     val starRed = info.star == result.zhiFuStar
@@ -222,13 +217,20 @@ private fun PalaceCell(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            // ── 行1：天盘神（居中）+ 角标（右上：马绿/迫刑墓棕）──
+            // ── 行1：宫名（左）＋ 天盘神（中）＋ 角标（右上：马/迫/刑/墓棕）──
             Box(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = "${info.direction}${info.palace}",
+                    fontSize = 7.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = subColor.copy(alpha = 0.7f),
+                    modifier = Modifier.align(Alignment.CenterStart),
+                )
                 Text(
                     info.god,
                     fontSize = 8.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = textColor,
+                    color = subColor,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.align(Alignment.Center),
                 )
@@ -241,104 +243,79 @@ private fun PalaceCell(
                             m,
                             fontSize = 6.5.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (m == "马") maColor else stemColor,
+                            color = stemColor,
                         )
                     }
                 }
             }
 
             // ── 行2：星行 = 暗干(棕) 星(黑/红) 天盘干(黑/红) ──
-            if (isCenter) {
-                // 中宫：金色圆形天禽标记（App 特色）
-                Box(
-                    modifier = Modifier
-                        .size(24.dp)
-                        .border(1.dp, palette.gold, CircleShape),
-                    contentAlignment = Alignment.Center,
-                ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (hiddenGan.isNotEmpty()) {
                     Text(
-                        info.star,
-                        fontSize = 8.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = textColor,
-                        textAlign = TextAlign.Center,
+                        hiddenGan,
+                        fontSize = 9.sp,
+                        color = stemColor,
+                        modifier = Modifier.padding(end = 3.dp),
                     )
                 }
+                Text(
+                    info.star,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (starRed) red else textColor,
+                )
                 if (info.heavenStem.isNotEmpty()) {
-                    Text(info.heavenStem, fontSize = 8.sp, color = palette.gold, textAlign = TextAlign.Center)
-                }
-            } else {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (hiddenGan.isNotEmpty()) {
-                        Text(
-                            hiddenGan,
-                            fontSize = 9.sp,
-                            color = stemColor,
-                            modifier = Modifier.padding(end = 3.dp),
-                        )
-                    }
                     Text(
-                        info.star,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (starRed) red else textColor,
+                        info.heavenStem,
+                        fontSize = 9.sp,
+                        color = if (heavenRed) red else textColor,
+                        modifier = Modifier.padding(start = 3.dp),
                     )
-                    if (info.heavenStem.isNotEmpty()) {
-                        Text(
-                            info.heavenStem,
-                            fontSize = 9.sp,
-                            color = if (heavenRed) red else textColor,
-                            modifier = Modifier.padding(start = 3.dp),
-                        )
-                    }
                 }
             }
 
             // ── 行3：六亲 = 星六亲 + 天盘干六亲（小字）──
             if (info.liuQinStar.isNotEmpty()) {
                 Row {
-                    Text(info.liuQinStar, fontSize = 7.sp, color = textColor.copy(alpha = 0.8f))
+                    Text(info.liuQinStar, fontSize = 7.sp, color = subColor)
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text(info.liuQinHeaven, fontSize = 7.sp, color = textColor.copy(alpha = 0.8f))
+                    Text(info.liuQinHeaven, fontSize = 7.sp, color = subColor)
                 }
             }
 
             // ── 行4：门行 = 暗支(棕) 门(黑/红) 地盘干(黑) ──
-            if (isCenter) {
-                Text(info.gate, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = textColor)
-            } else {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (hiddenZhi.isNotEmpty()) {
-                        Text(
-                            hiddenZhi,
-                            fontSize = 9.sp,
-                            color = stemColor,
-                            modifier = Modifier.padding(end = 3.dp),
-                        )
-                    }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (hiddenZhi.isNotEmpty()) {
                     Text(
-                        info.gate,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (gateRed) red else textColor,
+                        hiddenZhi,
+                        fontSize = 9.sp,
+                        color = stemColor,
+                        modifier = Modifier.padding(end = 3.dp),
                     )
-                    if (info.earthStem.isNotEmpty()) {
-                        Text(
-                            info.earthStem,
-                            fontSize = 9.sp,
-                            color = textColor,
-                            modifier = Modifier.padding(start = 3.dp),
-                        )
-                    }
+                }
+                Text(
+                    info.gate,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (gateRed) red else textColor,
+                )
+                if (info.earthStem.isNotEmpty()) {
+                    Text(
+                        info.earthStem,
+                        fontSize = 9.sp,
+                        color = textColor,
+                        modifier = Modifier.padding(start = 3.dp),
+                    )
                 }
             }
 
             // ── 行5：六亲 = 门六亲 + 地盘干六亲（小字）──
             if (info.liuQinGate.isNotEmpty()) {
                 Row {
-                    Text(info.liuQinGate, fontSize = 7.sp, color = textColor.copy(alpha = 0.8f))
+                    Text(info.liuQinGate, fontSize = 7.sp, color = subColor)
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text(info.liuQinEarth, fontSize = 7.sp, color = textColor.copy(alpha = 0.8f))
+                    Text(info.liuQinEarth, fontSize = 7.sp, color = subColor)
                 }
             }
 
@@ -352,7 +329,7 @@ private fun PalaceCell(
                         info.earthGod,
                         fontSize = 8.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (earthGodRed) red else textColor,
+                        color = if (earthGodRed) red else subColor,
                         modifier = Modifier.padding(start = 4.dp),
                     )
                 }

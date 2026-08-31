@@ -57,6 +57,16 @@ object QimenShareImage {
             textSize = 32f
             textAlign = Paint.Align.CENTER
         }
+        val goldSmallPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = palette.gold.toArgb()
+            textSize = 24f
+            textAlign = Paint.Align.CENTER
+        }
+        val redPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = palette.cinnabar.toArgb()
+            textSize = 32f
+            textAlign = Paint.Align.CENTER
+        }
         val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
             strokeWidth = 3f
@@ -95,10 +105,7 @@ object QimenShareImage {
             val isZhiShi = palaceNum == result.zhiShiPalace
             val isCenter = palaceNum == 5
 
-            cellBg.color = when {
-                isCenter -> palette.centerBg.toArgb()
-                else -> palette.paper.toArgb()
-            }
+            cellBg.color = palette.paper.toArgb()
             canvas.drawRect(x, y, x + cell, y + cell, cellBg)
             val rect = RectF(x, y, x + cell, y + cell)
             if (isZhiFu || isZhiShi) {
@@ -107,40 +114,59 @@ object QimenShareImage {
                 canvas.drawRect(rect, borderPaint)
             }
 
-            // 宫名（左上角）
-            canvas.drawText(
-                "${info.direction}$palaceNum",
-                x + 40f,
-                y + 52f,
-                Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    color = palette.slate.toArgb(); textSize = 26f
-                },
-            )
-
             val cx = x + cell / 2f
+            val hiddenGan = info.hiddenStem?.firstOrNull()?.toString() ?: ""
+            val hiddenZhi = info.hiddenStem?.lastOrNull()?.toString() ?: ""
+            val starRed = info.star == result.zhiFuStar
+            val gateRed = info.gate == result.zhiShiGate
+            val heavenRed = info.heavenStem.isNotEmpty() &&
+                (info.heavenStem == result.dayPillar.first().toString() ||
+                    info.heavenStem == result.hourPillar.first().toString())
+            val earthGodRed = info.earthGod == "值符"
 
-            // 值符/值使标记
-            val badge = when {
-                isZhiFu && isZhiShi -> "符使"
-                isZhiFu -> "符"
-                isZhiShi -> "使"
-                else -> null
-            }
-            if (badge != null) {
-                canvas.drawText(badge, x + cell - 50f, y + 52f, goldPaint)
+            // ── 行1：宫名（左）＋ 天盘神（中）＋ 角标（右上：马/迫/刑/墓棕）──
+            canvas.drawText("${info.direction}$palaceNum", x + 55f, y + 50f, cellSub)
+            canvas.drawText(info.god, cx, y + 50f, cellSub)
+            info.marks.forEachIndexed { idx, m ->
+                canvas.drawText(m, x + cell - 45f - idx * 38f, y + 50f, goldSmallPaint)
             }
 
-            if (isCenter) {
-                canvas.drawText("中", cx, y + cell / 2f + 10f, titlePaint)
-            } else {
-                // 星+天盘干（上）
-                canvas.drawText("${info.star}${info.heavenStem}", cx, y + cell / 2f - 40f, cellText)
-                // 门（中）
-                canvas.drawText(info.gate, cx, y + cell / 2f + 22f, cellText)
-                // 神（下左）
-                canvas.drawText(info.god, cx - 40f, y + cell - 30f, cellSub)
-                // 地盘干（下右）
-                canvas.drawText("(${info.earthStem})", cx + 40f, y + cell - 30f, goldPaint)
+            // ── 行2：星行 = 暗干(棕) 星(黑/红) 天盘干(黑/红) ──
+            val starPaint = if (starRed) redPaint else cellText
+            if (hiddenGan.isNotEmpty()) {
+                canvas.drawText(hiddenGan, cx - 100f, y + 100f, goldPaint)
+            }
+            canvas.drawText(info.star, cx, y + 100f, starPaint)
+            if (info.heavenStem.isNotEmpty()) {
+                canvas.drawText(info.heavenStem, cx + 100f, y + 100f, if (heavenRed) redPaint else cellText)
+            }
+
+            // ── 行3：六亲 = 星六亲 + 天盘干六亲 ──
+            if (info.liuQinStar.isNotEmpty()) {
+                canvas.drawText(info.liuQinStar, cx - 100f, y + 138f, cellSub)
+                canvas.drawText(info.liuQinHeaven, cx + 100f, y + 138f, cellSub)
+            }
+
+            // ── 行4：门行 = 暗支(棕) 门(黑/红) 地盘干(黑) ──
+            val gatePaint = if (gateRed) redPaint else cellText
+            if (hiddenZhi.isNotEmpty()) {
+                canvas.drawText(hiddenZhi, cx - 100f, y + 186f, goldPaint)
+            }
+            canvas.drawText(info.gate, cx, y + 186f, gatePaint)
+            if (info.earthStem.isNotEmpty()) {
+                canvas.drawText(info.earthStem, cx + 100f, y + 186f, cellText)
+            }
+
+            // ── 行5：六亲 = 门六亲 + 地盘干六亲 ──
+            if (info.liuQinGate.isNotEmpty()) {
+                canvas.drawText(info.liuQinGate, cx - 100f, y + 224f, cellSub)
+                canvas.drawText(info.liuQinEarth, cx + 100f, y + 224f, cellSub)
+            }
+
+            // ── 行6：地盘神（左）+ 状态（右）──
+            canvas.drawText(info.earthGod, x + 70f, y + 272f, if (earthGodRed) redPaint else cellSub)
+            if (info.state.isNotEmpty()) {
+                canvas.drawText(info.state, x + cell - 70f, y + 272f, goldSmallPaint)
             }
         }
 

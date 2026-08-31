@@ -53,15 +53,14 @@ object QimenCalculator {
 
         val zhiShiGate = QimenConstants.GATE_ORIGINAL[xunShouEarthPalace]!!
         val hourIndexInXun = findHourIndexInXun(hourPillar, xunShou)
-        // 值使门为中门时固定落中宫（中门只在五宫）
-        val zhiShiPalace = if (zhiShiGate == "中") 5
-        else flyPalace(xunShouEarthPalace, hourIndexInXun - 1, yangDun)
+        // 值使门落宫：从旬首遁仪地盘宫起，按六十甲子序数阳顺阴逆飞布（值使为中门时同样飞布，不固定居中）
+        val zhiShiPalace = flyPalace(xunShouEarthPalace, hourIndexInXun - 1, yangDun)
         val gates = buildGates(zhiShiGate, zhiShiPalace)
 
-        val hiddenStems = buildHiddenStems(hourPillar, zhiShiPalace, yangDun, kongWang)
+        val hiddenStems = buildHiddenStems(hourPillar, zhiShiPalace, yangDun)
 
         // 月令五行（据当前节气）
-        val monthElement = QimenConstants.JIE_QI_MONTH_ELEMENT[jieQi] ?: "土"
+        val monthElement = QimenPalaceEnhancer.monthElementOf(jieQi)
 
         val palaces = (1..9).associateWith { p ->
             val star = stars[p] ?: ""
@@ -78,12 +77,12 @@ object QimenCalculator {
                 earthStem = earthStem,
                 hiddenStem = hiddenStems[p],
                 earthGod = earthGods[p] ?: "",
-                state = wangShuaiState(heavenStem, monthElement),
-                liuQinStar = liuQinOf(QimenConstants.STAR_ELEMENT[star], hourStem),
-                liuQinHeaven = liuQinOf(QimenConstants.STEM_ELEMENT[heavenStem], hourStem),
-                liuQinGate = liuQinOf(QimenConstants.GATE_ELEMENT[gate], hourStem),
-                liuQinEarth = liuQinOf(QimenConstants.STEM_ELEMENT[earthStem], hourStem),
-                marks = buildMarks(p, star, gate, heavenStem, earthStem, hourPillar),
+                state = QimenPalaceEnhancer.wangShuaiState(heavenStem, monthElement),
+                liuQinStar = QimenPalaceEnhancer.liuQinOf(QimenConstants.STAR_ELEMENT[star], hourStem),
+                liuQinHeaven = QimenPalaceEnhancer.liuQinOf(QimenConstants.STEM_ELEMENT[heavenStem], hourStem),
+                liuQinGate = QimenPalaceEnhancer.liuQinOf(QimenConstants.GATE_ELEMENT[gate], hourStem),
+                liuQinEarth = QimenPalaceEnhancer.liuQinOf(QimenConstants.STEM_ELEMENT[earthStem], hourStem),
+                marks = QimenPalaceEnhancer.buildMarks(p, gate, heavenStem, hourPillar),
             )
         }
 
@@ -263,75 +262,57 @@ object QimenCalculator {
     }
 
     private fun buildStars(zhiFuStar: String, hourStemPalace: Int): Map<Int, String> {
+        // 教材（鸣法）：星序含天禽，值符星加时干宫后按星序顺飞 9 宫（天禽参与飞布，不固定居中）
         val stars = mutableMapOf<Int, String>()
-        stars[5] = "天禽"
-        val flyOrder = QimenConstants.STARS_ORDER.filter { it != "天禽" }
-        val startIdx = if (zhiFuStar == "天禽") 0 else flyOrder.indexOf(zhiFuStar)
+        val startIdx = QimenConstants.STARS_ORDER.indexOf(zhiFuStar)
         var palace = hourStemPalace
-        var starIdx = startIdx
-        var placed = 0
-        while (placed < 8) {
-            if (palace != 5) {
-                stars[palace] = flyOrder[starIdx % 8]
-                starIdx++
-                placed++
-            }
-            if (placed < 8) {
-                palace = flyPalace(palace, 1, forward = true)
-            }
+        for (i in 0 until 9) {
+            stars[palace] = QimenConstants.STARS_ORDER[(startIdx + i) % 9]
+            palace = flyPalace(palace, 1, forward = true)
         }
         return stars
     }
 
     private fun buildGates(zhiShiGate: String, zhiShiPalace: Int): Map<Int, String> {
+        // 教材（鸣法）：门序含中门，值使门落宫后按门序顺飞 9 宫（中门参与飞布，不固定居中）
         val gates = mutableMapOf<Int, String>()
-        gates[5] = "中"
-        val flyOrder = QimenConstants.GATES_ORDER.filter { it != "中" }
-        // 值使门为中门时：中门居中宫，其余八门从中门之后（开）顺飞
-        val startIdx = if (zhiShiGate == "中") 0 else flyOrder.indexOf(zhiShiGate)
+        val startIdx = QimenConstants.GATES_ORDER.indexOf(zhiShiGate)
         var palace = zhiShiPalace
-        var gateIdx = startIdx
-        var placed = 0
-        while (placed < 8) {
-            if (palace != 5) {
-                gates[palace] = flyOrder[gateIdx % 8]
-                gateIdx++
-                placed++
-            }
-            if (placed < 8) {
-                palace = flyPalace(palace, 1, forward = true)
-            }
+        for (i in 0 until 9) {
+            gates[palace] = QimenConstants.GATES_ORDER[(startIdx + i) % 9]
+            palace = flyPalace(palace, 1, forward = true)
         }
         return gates
     }
 
+    /**
+     * 布暗干支（据《暗干排法》：旬内回绕飞宫法）
+     * 时干支加值使门落宫；暗干序列 = 本旬十个干支从时干支起正序循环（回绕过旬首甲，即「遇甲不排」）；
+     * 宫位阳遁顺飞、阴遁逆飞；中宫也参与飞布（不跳过）。
+     * 注：旬内十支天然不含本旬空亡地支（空亡=旬首后第10/11位地支，必在旬外），故「空亡不排」自动满足。
+     */
     private fun buildHiddenStems(
         hourPillar: String,
         zhiShiPalace: Int,
         yangDun: Boolean,
-        kongWang: String,
     ): Map<Int, String?> {
         val result = mutableMapOf<Int, String?>()
-        val kongBranches = kongWang.map { it.toString() }.toSet()
-        var jiaZiIdx = QimenConstants.JIA_ZI_60.indexOf(hourPillar)
+        result[zhiShiPalace] = hourPillar
+        // 本旬十干支（甲子旬~癸亥旬，每旬10个）
+        val hourIdx = QimenConstants.JIA_ZI_60.indexOf(hourPillar)
+        val xunStart = (hourIdx / 10) * 10
+        val start = hourIdx - xunStart // 时干支在旬内位置（0=旬首甲）
         var palace = zhiShiPalace
         var placed = 0
-        var safety = 0
-        while (placed < 8 && safety < 120) {
-            safety++
-            if (palace == 5) {
+        var step = 1
+        while (placed < 8 && step < 12) {
+            val gz = QimenConstants.JIA_ZI_60[xunStart + (start + step) % 10]
+            if (gz[0] != '甲') {
                 palace = flyPalace(palace, 1, yangDun)
-                continue
-            }
-            val gz = QimenConstants.JIA_ZI_60[jiaZiIdx % 60]
-            val stem = gz[0].toString()
-            val branch = gz[1].toString()
-            if (branch !in kongBranches && stem != "甲") {
                 result[palace] = gz
                 placed++
-                palace = flyPalace(palace, 1, yangDun)
             }
-            jiaZiIdx = if (yangDun) (jiaZiIdx + 1) % 60 else (jiaZiIdx + 59) % 60
+            step++
         }
         return result
     }
@@ -354,79 +335,5 @@ object QimenCalculator {
         val xunStart = QimenConstants.JIA_ZI_60.indexOf(xunShou)
         val hourIdx = QimenConstants.JIA_ZI_60.indexOf(hourPillar)
         return hourIdx - xunStart + 1
-    }
-
-    /**
-     * 六亲取法（以时干为「我」）：生我=父母、克我=官鬼、我克=妻财、我生=子孙、比和=兄弟。
-     * @param element 元素五行（星/天盘干/门/地盘干）
-     * @param woStem 时干
-     */
-    private fun liuQinOf(element: String?, woStem: String): String {
-        if (element == null || element.isEmpty()) return ""
-        val wo = QimenConstants.STEM_ELEMENT[woStem] ?: return ""
-        return when {
-            QimenConstants.ELEMENT_GENERATES[element] == wo -> "父母"
-            QimenConstants.ELEMENT_CONTROLS[element] == wo -> "官鬼"
-            QimenConstants.ELEMENT_CONTROLS[wo] == element -> "妻财"
-            QimenConstants.ELEMENT_GENERATES[wo] == element -> "子孙"
-            else -> "兄弟"
-        }
-    }
-
-    /**
-     * 旺衰状态（月令旺衰）：以天盘干五行对月令五行论——当令者旺、令生者相、生令者休、克令者囚、令克者死。
-     * 废/没/胎 为对宫/极衰补充（待校准：与原版参考盘的 废/没/胎 判定口径可能不同）。
-     */
-    private fun wangShuaiState(heavenStem: String, monthElement: String): String {
-        val el = QimenConstants.STEM_ELEMENT[heavenStem] ?: return ""
-        return when {
-            el == monthElement -> "旺"
-            QimenConstants.ELEMENT_GENERATES[monthElement] == el -> "相"
-            QimenConstants.ELEMENT_GENERATES[el] == monthElement -> "休"
-            QimenConstants.ELEMENT_CONTROLS[el] == monthElement -> "囚"
-            else -> "死"
-        }
-    }
-
-    /**
-     * 宫角标记：
-     * - 马：时支驿马落宫（绿色马字）
-     * - 迫：门克宫（凶门克宫，且无刑墓时显示）
-     * - 刑：天盘干犯六仪击刑本宫
-     * - 墓：天盘干入墓本宫
-     */
-    private fun buildMarks(
-        palace: Int,
-        star: String,
-        gate: String,
-        heavenStem: String,
-        earthStem: String,
-        hourPillar: String,
-    ): List<String> {
-        val marks = mutableListOf<String>()
-
-        // 马：时支三合驿马（如戌时 -> 马在申 -> 坤2）
-        val hourBranch = hourPillar.getOrNull(1)?.toString() ?: ""
-        val yiMaBranch = QimenConstants.YI_MA[hourBranch] ?: ""
-        if (yiMaBranch.isNotEmpty() && yiMaBranch in (QimenConstants.PALACE_BRANCHES[palace] ?: emptyList())) {
-            marks.add("马")
-        }
-
-        // 墓：天盘干入本宫墓
-        if (QimenConstants.STEM_TOMB[heavenStem] == palace) marks.add("墓")
-
-        // 刑：天盘干六仪击刑落本宫
-        if (QimenConstants.JI_XING[heavenStem] == palace) marks.add("刑")
-
-        // 迫：门克宫（中门不论），已有刑/墓时不再标迫
-        if (gate.isNotEmpty() && gate != "中" && marks.none { it == "刑" || it == "墓" }) {
-            val gateEl = QimenConstants.GATE_ELEMENT[gate] ?: ""
-            val palaceEl = QimenConstants.PALACE_ELEMENT[palace] ?: ""
-            if (gateEl.isNotEmpty() && QimenConstants.ELEMENT_CONTROLS[gateEl] == palaceEl) {
-                marks.add("迫")
-            }
-        }
-
-        return marks
     }
 }
