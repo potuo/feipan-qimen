@@ -105,7 +105,7 @@ fun AboutScreen() {
         if (checking || downloading) return
         scope.launch {
             checking = true
-            val info = UpdateChecker.checkLatest()
+            val info = UpdateChecker.checkLatest(versionName)
             checking = false
             if (info == null) {
                 Toast.makeText(context, "检查更新失败：网络不可用", Toast.LENGTH_SHORT).show()

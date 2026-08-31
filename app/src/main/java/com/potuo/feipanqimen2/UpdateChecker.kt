@@ -71,12 +71,27 @@ object UpdateChecker {
             .edit().putLong("last_update_check", System.currentTimeMillis()).apply()
     }
 
-    /** 检查最新版本：Gitee（国内主）→ GitHub API → jsDelivr → raw，全部失败返回 null（调用方静默处理） */
-    suspend fun checkLatest(): UpdateInfo? = withContext(Dispatchers.IO) {
-        fetchVersionFile("$GITEE_RAW/version.json")
-            ?: fetchGitHubApi()
-            ?: fetchVersionFile(JS_DELIVR)
-            ?: fetchVersionFile(RAW_GITHUB)
+    /**
+     * 检查最新版本：Gitee（国内主）→ GitHub API → jsDelivr → raw。
+     * 带本地版本防旧缓存：某源返回的版本 ≤ 本地版本（CDN/raw 缓存未刷新）时跳过继续下一源，
+     * 直到拿到更高版本；全部源都不高于本地则返回最后拿到的结果（调用方判“已是最新”）。
+     */
+    suspend fun checkLatest(localVersion: String): UpdateInfo? = withContext(Dispatchers.IO) {
+        val sources = listOf(
+            { fetchVersionFile("$GITEE_RAW/version.json") },
+            { fetchGitHubApi() },
+            { fetchVersionFile(JS_DELIVR) },
+            { fetchVersionFile(RAW_GITHUB) },
+        )
+        var last: UpdateInfo? = null
+        for (fetch in sources) {
+            val info = fetch()
+            if (info != null) {
+                last = info
+                if (compareVersions(info.version, localVersion) > 0) return@withContext info
+            }
+        }
+        last
     }
 
     private fun fetchGitHubApi(): UpdateInfo? {

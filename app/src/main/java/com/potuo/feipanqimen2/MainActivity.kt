@@ -207,7 +207,7 @@ fun MainApp(
         }
 
         if (UpdateChecker.shouldAutoCheck(context)) {
-            val info = UpdateChecker.checkLatest()
+            val info = UpdateChecker.checkLatest(localVer)
             UpdateChecker.markChecked(context)
             if (info != null && UpdateChecker.compareVersions(info.version, localVer) > 0) {
                 updateInfo = info
