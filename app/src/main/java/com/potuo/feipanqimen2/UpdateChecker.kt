@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.core.content.FileProvider
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -161,6 +163,19 @@ object UpdateChecker {
             }
             dest.length() > 0
         }.getOrDefault(false)
+    }
+
+    /** 更新日志缓存：成功拉取后存本地，离线时兜底展示 */
+    fun saveChangelogCache(context: Context, entries: List<ChangelogEntry>) {
+        context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
+            .edit().putString("changelog_cache", Gson().toJson(entries)).apply()
+    }
+
+    fun loadChangelogCache(context: Context): List<ChangelogEntry>? {
+        val json = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
+            .getString("changelog_cache", null) ?: return null
+        val type = object : TypeToken<List<ChangelogEntry>>() {}.type
+        return runCatching { Gson().fromJson<List<ChangelogEntry>>(json, type) }.getOrNull()
     }
 
     /** 通过 FileProvider + 系统安装器安装 APK（Android 8+ 需 REQUEST_INSTALL_PACKAGES 与未知来源授权） */

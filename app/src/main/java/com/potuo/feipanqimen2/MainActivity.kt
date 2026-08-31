@@ -1,5 +1,6 @@
 package com.potuo.feipanqimen2
 
+import android.content.Context
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -42,9 +43,11 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -67,6 +70,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -92,12 +96,16 @@ import com.potuo.feipanqimen2.ui.InputScreen
 import com.potuo.feipanqimen2.ui.LearnScreen
 import com.potuo.feipanqimen2.ui.ResultScreen
 import com.potuo.feipanqimen2.ui.SettingsScreen
+import com.potuo.feipanqimen2.ui.components.QimenButton
+import com.potuo.feipanqimen2.ui.components.QimenOutlinedButton
 import com.potuo.feipanqimen2.ui.theme.FeipanQimenTheme
 import com.potuo.feipanqimen2.ui.theme.LocalQimenPalette
 import com.potuo.feipanqimen2.ui.theme.QimenColors
 import com.potuo.feipanqimen2.viewmodel.MainViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.io.File
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -162,6 +170,12 @@ fun MainApp(
     val message by viewModel.message.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val appPrefs = remember { context.getSharedPreferences("app_settings", Context.MODE_PRIVATE) }
+
+    var updateInfo by remember { mutableStateOf<UpdateInfo?>(null) }
+    var downloading by remember { mutableStateOf(false) }
+    var downloadProgress by remember { mutableStateOf(0f) }
+    var changelogDialog by remember { mutableStateOf<ChangelogDialogState?>(null) }
 
     LaunchedEffect(message) {
         message?.let {
@@ -170,23 +184,33 @@ fun MainApp(
         }
     }
 
+    // 启动：闪屏 → 更新日志弹窗（新版本首次）→ 静默检查更新（24h 一次）
     LaunchedEffect(Unit) {
-        if (showSplash) {
-            delay(1900)
-            showSplash = false
-        }
-    }
+        delay(1900)
+        showSplash = false
 
-    // 启动静默检查更新（24h 一次，失败不打扰用户）
-    LaunchedEffect(Unit) {
+        val localVer = runCatching {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "0"
+        }.getOrDefault("0")
+
+        val lastSeen = appPrefs.getString("last_seen_version", null)
+        if (lastSeen != localVer) {
+            var entries = UpdateChecker.loadChangelogCache(context) ?: emptyList()
+            if (entries.isEmpty()) {
+                UpdateChecker.fetchChangelog()?.let { fresh ->
+                    entries = fresh
+                    UpdateChecker.saveChangelogCache(context, fresh)
+                }
+            }
+            changelogDialog = ChangelogDialogState(localVer, entries)
+            snapshotFlow { changelogDialog }.first { it == null }
+        }
+
         if (UpdateChecker.shouldAutoCheck(context)) {
-            val localVer = runCatching {
-                context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "0"
-            }.getOrDefault("0")
             val info = UpdateChecker.checkLatest()
             UpdateChecker.markChecked(context)
             if (info != null && UpdateChecker.compareVersions(info.version, localVer) > 0) {
-                snackbarHostState.showSnackbar("发现新版本 v${info.version}，可在设置中检查更新")
+                updateInfo = info
             }
         }
     }
@@ -385,7 +409,103 @@ fun MainApp(
             }
         }
     }
+
+    changelogDialog?.let { state ->
+        val currentEntry = state.entries.firstOrNull {
+            UpdateChecker.compareVersions(it.version, state.version) == 0
+        }
+        AlertDialog(
+            onDismissRequest = {},
+            title = { Text("更新日志 · v${state.version}") },
+            text = {
+                Column {
+                    if (currentEntry != null) {
+                        currentEntry.items.forEach { item ->
+                            Text(
+                                "· $item",
+                                style = MaterialTheme.typography.bodySmall,
+                                lineHeight = 20.sp,
+                                modifier = Modifier.padding(top = 2.dp),
+                            )
+                        }
+                    } else {
+                        Text(
+                            "暂无更新日志内容",
+                            style = MaterialTheme.typography.bodySmall,
+                            lineHeight = 20.sp,
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                QimenButton(
+                    onClick = {
+                        appPrefs.edit().putString("last_seen_version", state.version).apply()
+                        changelogDialog = null
+                    },
+                    modifier = Modifier.padding(end = 8.dp),
+                ) { Text("知道了") }
+            },
+        )
+    }
+
+    updateInfo?.let { info ->
+        AlertDialog(
+            onDismissRequest = { if (!downloading) updateInfo = null },
+            title = { Text("发现新版本 v${info.version}") },
+            text = {
+                Column {
+                    Text(
+                        info.notes?.takeIf { it.isNotBlank() } ?: "修复与优化内容请见更新日志",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    if (downloading) {
+                        LinearProgressIndicator(
+                            progress = { downloadProgress.coerceIn(0f, 1f) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 12.dp),
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                QimenButton(
+                    onClick = {
+                        if (downloading) return@QimenButton
+                        scope.launch {
+                            downloading = true
+                            downloadProgress = 0f
+                            val apkFile = File(context.cacheDir, "update.apk")
+                            val ok = UpdateChecker.downloadApk(info.apkUrl, apkFile) { p ->
+                                scope.launch { downloadProgress = p }
+                            }
+                            downloading = false
+                            if (ok) {
+                                UpdateChecker.installApk(context, apkFile)
+                                updateInfo = null
+                            } else {
+                                Toast.makeText(context, "下载失败，请稍后重试", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    },
+                    enabled = !downloading,
+                    modifier = Modifier.padding(end = 8.dp),
+                ) { Text(if (downloading) "下载中…" else "立即更新") }
+            },
+            dismissButton = {
+                QimenOutlinedButton(
+                    onClick = { if (!downloading) updateInfo = null },
+                ) { Text("稍后") }
+            },
+        )
+    }
 }
+
+private data class ChangelogDialogState(
+    val version: String,
+    val entries: List<ChangelogEntry>,
+)
 
 /** 启动动画：罗盘金环旋转 + 标题浮现（跟随主题配色与明暗） */
 @Composable

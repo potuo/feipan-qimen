@@ -1,6 +1,5 @@
 package com.potuo.feipanqimen2.ui
 
-import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
@@ -41,8 +40,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import com.potuo.feipanqimen2.ChangelogEntry
 import com.potuo.feipanqimen2.UpdateChecker
 import com.potuo.feipanqimen2.UpdateInfo
@@ -137,11 +134,11 @@ fun AboutScreen() {
 
     // 进入页面即拉取更新日志
     LaunchedEffect(Unit) {
-        changelog = loadChangelogCache(context)
+        changelog = UpdateChecker.loadChangelogCache(context)
         val fresh = UpdateChecker.fetchChangelog()
         if (fresh != null) {
             changelog = fresh
-            saveChangelogCache(context, fresh)
+            UpdateChecker.saveChangelogCache(context, fresh)
             changelogFailed = false
         } else if (changelog == null) {
             changelogFailed = true
@@ -353,17 +350,4 @@ fun AboutScreen() {
             },
         )
     }
-}
-
-/** 更新日志缓存：成功拉取后存本地，离线时兜底展示 */
-private fun saveChangelogCache(context: Context, entries: List<ChangelogEntry>) {
-    context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
-        .edit().putString("changelog_cache", Gson().toJson(entries)).apply()
-}
-
-private fun loadChangelogCache(context: Context): List<ChangelogEntry>? {
-    val json = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
-        .getString("changelog_cache", null) ?: return null
-    val type = object : TypeToken<List<ChangelogEntry>>() {}.type
-    return runCatching { Gson().fromJson<List<ChangelogEntry>>(json, type) }.getOrNull()
 }
