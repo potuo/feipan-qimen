@@ -6,6 +6,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,11 +16,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -62,25 +68,6 @@ private fun fileNameFromUri(context: Context, uri: android.net.Uri): String {
     return name.substringBeforeLast('.')
 }
 
-/** 配色单选行 */
-@Composable
-private fun ProviderRow(
-    name: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = QimenDimens.spacingSm),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        RadioButton(selected = selected, onClick = onClick)
-        Text(name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 8.dp))
-    }
-}
-
 /** 玄鉴配置页：模型/apikey + 资料 skill 管理（开关/删除/导入） */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -113,26 +100,70 @@ fun XuanJianConfigScreen(onBack: () -> Unit) {
         // ── 模型 ──
         QimenCard(accentBar = true) {
             Text(
-                "模型供应商",
+                "模型",
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(modifier = Modifier.height(QimenDimens.spacingSm))
-            (AiAssistant.PROVIDERS.map { it.name } + AiAssistant.CUSTOM).forEach { name ->
-                ProviderRow(
-                    name = name,
-                    selected = aiConfig.provider == name,
-                    onClick = {
-                        val preset = AiAssistant.PROVIDERS.firstOrNull { it.name == name }
-                        aiConfig = aiConfig.copy(
-                            provider = name,
-                            baseUrl = preset?.baseUrl ?: aiConfig.baseUrl,
-                            model = preset?.model ?: aiConfig.model,
-                        )
-                        AiAssistant.saveConfig(context, aiConfig)
-                    },
-                )
+            Row(horizontalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm)) {
+                // 候选框 1：供应商
+                Box(modifier = Modifier.weight(1f)) {
+                    var providerMenu by remember { mutableStateOf(false) }
+                    OutlinedButton(
+                        onClick = { providerMenu = true },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(aiConfig.provider, maxLines = 1, modifier = Modifier.weight(1f))
+                        Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                    }
+                    DropdownMenu(expanded = providerMenu, onDismissRequest = { providerMenu = false }) {
+                        (AiAssistant.PROVIDERS.map { it.name } + AiAssistant.CUSTOM).forEach { name ->
+                            DropdownMenuItem(
+                                text = { Text(name) },
+                                onClick = {
+                                    val preset = AiAssistant.PROVIDERS.firstOrNull { it.name == name }
+                                    aiConfig = aiConfig.copy(
+                                        provider = name,
+                                        baseUrl = preset?.baseUrl ?: aiConfig.baseUrl,
+                                        model = preset?.models?.firstOrNull() ?: aiConfig.model,
+                                    )
+                                    AiAssistant.saveConfig(context, aiConfig)
+                                    providerMenu = false
+                                },
+                            )
+                        }
+                    }
+                }
+                // 候选框 2：模型
+                Box(modifier = Modifier.weight(1f)) {
+                    var modelMenu by remember { mutableStateOf(false) }
+                    OutlinedButton(
+                        onClick = { modelMenu = true },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(aiConfig.model, maxLines = 1, modifier = Modifier.weight(1f))
+                        Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                    }
+                    DropdownMenu(expanded = modelMenu, onDismissRequest = { modelMenu = false }) {
+                        val preset = AiAssistant.PROVIDERS.firstOrNull { it.name == aiConfig.provider }
+                        val models = if (aiConfig.provider == AiAssistant.CUSTOM) {
+                            listOf(aiConfig.model.ifBlank { "自定义模型" })
+                        } else {
+                            preset?.models ?: listOf(aiConfig.model)
+                        }
+                        models.forEach { m ->
+                            DropdownMenuItem(
+                                text = { Text(m) },
+                                onClick = {
+                                    aiConfig = aiConfig.copy(model = m)
+                                    AiAssistant.saveConfig(context, aiConfig)
+                                    modelMenu = false
+                                },
+                            )
+                        }
+                    }
+                }
             }
 
             if (aiConfig.provider == AiAssistant.CUSTOM) {

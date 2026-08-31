@@ -43,14 +43,14 @@ data class AiResult(
  */
 object AiAssistant {
 
-    /** 预设供应商：选预设只需填 API Key；「自定义」需填 baseUrl + model。supportsThinking=是否支持思考过程 */
-    data class Provider(val name: String, val baseUrl: String, val model: String, val supportsThinking: Boolean = false)
+    /** 预设供应商：每个供应商带多个可选模型。supportsThinking=是否支持思考过程 */
+    data class Provider(val name: String, val baseUrl: String, val models: List<String>, val supportsThinking: Boolean = false)
 
     val PROVIDERS = listOf(
-        Provider("DeepSeek", "https://api.deepseek.com", "deepseek-chat", supportsThinking = false),
-        Provider("Kimi", "https://api.moonshot.cn/v1", "moonshot-v1-8k", supportsThinking = true),
-        Provider("通义千问", "https://dashscope.aliyuncs.com/compatible-mode/v1", "qwen-plus", supportsThinking = false),
-        Provider("小米 MiMo", "https://api.xiaomimimo.com/v1", "mimo-v2.5-pro", supportsThinking = true),
+        Provider("DeepSeek", "https://api.deepseek.com", listOf("deepseek-chat", "deepseek-reasoner"), supportsThinking = false),
+        Provider("Kimi", "https://api.moonshot.cn/v1", listOf("moonshot-v1-8k", "moonshot-v1-32k", "moonshot-v1-128k"), supportsThinking = true),
+        Provider("通义千问", "https://dashscope.aliyuncs.com/compatible-mode/v1", listOf("qwen-plus", "qwen-turbo", "qwen-max"), supportsThinking = false),
+        Provider("小米 MiMo", "https://api.xiaomimimo.com/v1", listOf("mimo-v2.5-pro", "mimo-v2.5", "mimo-v2-flash", "mimo-v2-omni"), supportsThinking = true),
     )
     const val CUSTOM = "自定义"
 
@@ -72,7 +72,7 @@ object AiAssistant {
             enabled = p.getBoolean("ai_enabled", false),
             provider = provider,
             baseUrl = p.getString("ai_base_url", preset?.baseUrl ?: "") ?: "",
-            model = p.getString("ai_model", preset?.model ?: "") ?: "",
+            model = p.getString("ai_model", preset?.models?.firstOrNull() ?: "") ?: "",
             apiKey = p.getString("ai_api_key", "") ?: "",
         )
     }

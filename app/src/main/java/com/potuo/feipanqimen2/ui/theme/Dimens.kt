@@ -12,4 +12,7 @@ object QimenDimens {
 
     val gridGap = 4.dp
     val gridBorder = 0.5.dp
+
+    val radiusSm = 8.dp
+    val radiusMd = 12.dp
 }

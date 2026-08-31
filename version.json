@@ -1,5 +1,5 @@
 {
-  "version": "4.1.0",
-  "apk_url": "https://gitee.com/potuo/feipan-qimen/releases/download/v4.1.0/app-debug.apk",
-  "notes": "官网 + 关于页官网入口 + 侧滑栏顺序调整"
+  "version": "4.2.0",
+  "apk_url": "https://gitee.com/potuo/feipan-qimen/releases/download/v4.2.0/app-debug.apk",
+  "notes": "玄鉴配置双候选框 + 思考强调色随主题 + 案例玄鉴解读 Markdown"
 }

@@ -3,7 +3,9 @@ package com.potuo.feipanqimen2.ui
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -348,7 +350,17 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                                 .clickable { showReasoning = !showReasoning },
                         )
                         if (showReasoning) {
-                            MarkdownText(text = aiReasoning)
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
+                                        RoundedCornerShape(QimenDimens.radiusSm),
+                                    )
+                                    .padding(QimenDimens.spacingMd),
+                            ) {
+                                MarkdownText(text = aiReasoning)
+                            }
                         }
                         Spacer(modifier = Modifier.height(QimenDimens.spacingSm))
                     }

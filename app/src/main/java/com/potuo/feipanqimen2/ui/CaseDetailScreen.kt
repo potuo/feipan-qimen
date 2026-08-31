@@ -4,6 +4,7 @@ import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -43,6 +44,7 @@ import com.potuo.feipanqimen2.QimenShareImage
 import com.potuo.feipanqimen2.data.CaseEntity
 import com.potuo.feipanqimen2.qimen.QimenConstants
 import com.potuo.feipanqimen2.ui.components.HuangLiCard
+import com.potuo.feipanqimen2.ui.components.MarkdownText
 import com.potuo.feipanqimen2.ui.components.QimenBoard
 import com.potuo.feipanqimen2.ui.components.QimenCard
 import com.potuo.feipanqimen2.ui.components.PalaceDetailDialog
@@ -210,11 +212,41 @@ fun CaseDetailScreen(
                         textAlign = TextAlign.Center,
                     )
                     Spacer(modifier = Modifier.height(QimenDimens.spacingSm))
-                    Text(
-                        c.aiReading,
-                        style = MaterialTheme.typography.bodyMedium,
-                        lineHeight = 22.sp,
-                    )
+
+                    // 拆分思考过程与结论（存库格式：【思考过程】…【结论】…）
+                    val reasoningPart = if (c.aiReading.contains("【思考过程】")) {
+                        c.aiReading.substringAfter("【思考过程】").substringBefore("【结论】").trim()
+                    } else ""
+                    val conclusionPart = if (c.aiReading.contains("【结论】")) {
+                        c.aiReading.substringAfter("【结论】").trim()
+                    } else c.aiReading
+
+                    if (reasoningPart.isNotBlank()) {
+                        var showReasoning by remember { mutableStateOf(false) }
+                        Text(
+                            if (showReasoning) "▾ 思考过程" else "▸ 思考过程",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { showReasoning = !showReasoning },
+                        )
+                        if (showReasoning) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
+                                        RoundedCornerShape(QimenDimens.radiusSm),
+                                    )
+                                    .padding(QimenDimens.spacingMd),
+                            ) {
+                                MarkdownText(text = reasoningPart)
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(QimenDimens.spacingSm))
+                    }
+                    MarkdownText(text = conclusionPart)
                 }
             }
 
