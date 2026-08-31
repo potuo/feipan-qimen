@@ -4,6 +4,7 @@ import android.app.Application
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.potuo.feipanqimen2.AiAssistant
 import com.potuo.feipanqimen2.data.AppDatabase
 import com.potuo.feipanqimen2.data.CaseEntity
 import com.potuo.feipanqimen2.data.CaseRepository
@@ -20,6 +21,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -78,6 +81,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _message = MutableStateFlow<String?>(null)
     val message: StateFlow<String?> = _message.asStateFlow()
 
+    private val _aiReading = MutableStateFlow("")
+    val aiReading: StateFlow<String> = _aiReading.asStateFlow()
+
+    private val _aiReasoning = MutableStateFlow("")
+    val aiReasoning: StateFlow<String> = _aiReasoning.asStateFlow()
+
+    private val _aiLoading = MutableStateFlow(false)
+    val aiLoading: StateFlow<Boolean> = _aiLoading.asStateFlow()
+
+    private val _aiElapsed = MutableStateFlow(0)
+    val aiElapsed: StateFlow<Int> = _aiElapsed.asStateFlow()
+
     val cases = combine(_searchQuery, _categoryFilter, _feedbackFilter) { q, c, f -> Triple(q, c, f) }
         .flatMapLatest { (q, c, f) ->
             repository.searchCasesFiltered(q, c, f)
@@ -106,6 +121,37 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun setFeedbackFilter(filter: String) { _feedbackFilter.value = filter }
     fun clearMessage() { _message.value = null }
 
+    fun askAi(situation: String) {
+        val result = _qimenResult.value ?: return
+        val panJson = repository.serializePan(result)
+        viewModelScope.launch {
+            _aiLoading.value = true
+            _aiElapsed.value = 0
+            val timerJob = launch {
+                while (isActive) {
+                    delay(1000)
+                    _aiElapsed.value++
+                }
+            }
+            AiAssistant.ask(getApplication(), panJson, situation)
+                .onSuccess {
+                    _aiReasoning.value = it.reasoning
+                    _aiReading.value = it.content
+                }
+                .onFailure {
+                    _aiReasoning.value = ""
+                    _aiReading.value = "AI 请求失败：${it.message}"
+                }
+            timerJob.cancel()
+            _aiLoading.value = false
+        }
+    }
+
+    fun clearAiReading() {
+        _aiReading.value = ""
+        _aiReasoning.value = ""
+    }
+
     fun calculate() {
         val dt = buildDateTime()
         val label = "${_selectedDate.value} ${QimenConstants.HOUR_NAMES[_selectedHourIndex.value]}"
@@ -113,6 +159,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         try {
             _qimenResult.value = QimenCalculator.calculate(dt)
             _huangLi.value = HuangLiService.getHuangLi(dt)
+            // 盘面已变（新起盘或切时辰），清空上一局的 AI 断局结果
+            _aiReading.value = ""
+            _aiReasoning.value = ""
             val r = _qimenResult.value
             LogManager.log(
                 "排盘",
@@ -142,6 +191,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     tags = _tags.value,
                     note = _note.value,
                     huangLi = huangLi?.summary ?: "",
+                    aiReading = buildString {
+                        if (_aiReasoning.value.isNotBlank()) {
+                            append("【思考过程】\n")
+                            append(_aiReasoning.value)
+                            append("\n\n")
+                        }
+                        append("【结论】\n")
+                        append(_aiReading.value)
+                    },
                 )
                 repository.insert(entity)
                 LogManager.log("案例", "保存：${entity.siZhu} ${entity.dunType}${entity.juNumber}局")

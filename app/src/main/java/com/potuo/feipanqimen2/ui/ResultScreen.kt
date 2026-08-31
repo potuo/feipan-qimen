@@ -12,11 +12,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -39,6 +41,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
+import com.potuo.feipanqimen2.AiAssistant
 import com.potuo.feipanqimen2.PatternBook
 import com.potuo.feipanqimen2.QimenShareImage
 import com.potuo.feipanqimen2.data.CASE_CATEGORIES
@@ -46,6 +49,7 @@ import com.potuo.feipanqimen2.qimen.PatternInfo
 import com.potuo.feipanqimen2.qimen.QimenConstants
 import com.potuo.feipanqimen2.qimen.QimenPatternDetector
 import com.potuo.feipanqimen2.ui.components.HuangLiCard
+import com.potuo.feipanqimen2.ui.components.MarkdownText
 import com.potuo.feipanqimen2.ui.components.PalaceDetailDialog
 import com.potuo.feipanqimen2.ui.components.QimenBoard
 import com.potuo.feipanqimen2.ui.components.QimenButton
@@ -67,13 +71,20 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
     val huangLi by viewModel.huangLi.collectAsState()
     val tags by viewModel.tags.collectAsState()
     val category by viewModel.selectedCategory.collectAsState()
+    val aiReading by viewModel.aiReading.collectAsState()
+    val aiReasoning by viewModel.aiReasoning.collectAsState()
+    val aiLoading by viewModel.aiLoading.collectAsState()
+    val aiElapsed by viewModel.aiElapsed.collectAsState()
     var huangLiExpanded by remember { mutableStateOf(false) }
     var patternDetail by remember { mutableStateOf<PatternInfo?>(null) }
     var selectedPalace by remember { mutableStateOf<Int?>(null) }
     var boardAnimate by remember { mutableStateOf(true) }
+    var showAiDialog by remember { mutableStateOf(false) }
+    var aiSituation by remember { mutableStateOf("") }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val palette = LocalQimenPalette.current
+    val aiEnabled = AiAssistant.readConfig(context).enabled
 
     BackHandler(onBack = onBack)
 
@@ -158,46 +169,61 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
 
         QimenBoard(result = r, animate = boardAnimate, onPalaceClick = { selectedPalace = it })
 
-        // ── 格局（据《奇门基础资料 2023版教》第三卷）──
+        // ── 格局（据《奇门基础资料 2023版教》第三卷，可折叠）──
         if (patterns.isNotEmpty()) {
             QimenCard(accentBar = true) {
-                Text(
-                    "格局",
-                    fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center,
-                )
-                Spacer(modifier = Modifier.height(QimenDimens.spacingMd))
-                patterns.forEach { p ->
-                    Column(
-                        modifier = Modifier
-                            .padding(bottom = QimenDimens.spacingMd)
-                            .clickable { patternDetail = p },
-                    ) {
-                        Text(
-                            p.name,
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.SemiBold,
-                            color = when (p.isAuspicious) {
-                                true -> MaterialTheme.colorScheme.primary
-                                false -> MaterialTheme.colorScheme.error
-                                null -> MaterialTheme.colorScheme.onSurfaceVariant
-                            },
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            p.detail,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            lineHeight = 22.sp,
-                        )
-                        Text(
-                            "📖 点按查看教材原文",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
-                            modifier = Modifier.padding(top = 2.dp),
-                        )
+                var patternsExpanded by remember { mutableStateOf(true) }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { patternsExpanded = !patternsExpanded },
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "格局",
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        if (patternsExpanded) "收起" else "展开",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                if (patternsExpanded) {
+                    Spacer(modifier = Modifier.height(QimenDimens.spacingMd))
+                    patterns.forEach { p ->
+                        Column(
+                            modifier = Modifier
+                                .padding(bottom = QimenDimens.spacingMd)
+                                .clickable { patternDetail = p },
+                        ) {
+                            Text(
+                                p.name,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.SemiBold,
+                                color = when (p.isAuspicious) {
+                                    true -> MaterialTheme.colorScheme.primary
+                                    false -> MaterialTheme.colorScheme.error
+                                    null -> MaterialTheme.colorScheme.onSurfaceVariant
+                                },
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                p.detail,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                lineHeight = 22.sp,
+                            )
+                            Text(
+                                "📖 点按查看教材原文",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                                modifier = Modifier.padding(top = 2.dp),
+                            )
+                        }
                     }
                 }
             }
@@ -275,6 +301,85 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                 Text("分享盘面")
             }
         }
+
+        // ── AI 辅助断局（仅 AI 开关开启时显示）──
+        if (aiEnabled) {
+            QimenButton(
+                onClick = { showAiDialog = true },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !aiLoading,
+            ) {
+                if (aiLoading) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                        )
+                        Spacer(modifier = Modifier.width(QimenDimens.spacingSm))
+                        Text("参断中 ${aiElapsed}s")
+                    }
+                } else {
+                    Text("玄鉴参断")
+                }
+            }
+
+            if (aiReading.isNotBlank()) {
+                QimenCard(accentBar = true) {
+                    var showReasoning by remember { mutableStateOf(false) }
+                    Text(
+                        "玄鉴",
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                    )
+                    Spacer(modifier = Modifier.height(QimenDimens.spacingSm))
+                    if (aiReasoning.isNotBlank()) {
+                        Text(
+                            if (showReasoning) "▾ 思考过程" else "▸ 思考过程",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { showReasoning = !showReasoning },
+                        )
+                        if (showReasoning) {
+                            MarkdownText(text = aiReasoning)
+                        }
+                        Spacer(modifier = Modifier.height(QimenDimens.spacingSm))
+                    }
+                    MarkdownText(text = aiReading)
+                }
+            }
+        }
+    }
+
+    // ── AI 辅助输入 ──
+    if (showAiDialog) {
+        QimenDialog(
+            onDismissRequest = { showAiDialog = false },
+            title = "玄鉴参断",
+            confirmText = "开始断局",
+            onConfirm = {
+                viewModel.askAi(aiSituation)
+                showAiDialog = false
+            },
+            dismissText = "取消",
+            onDismiss = { showAiDialog = false },
+            text = {
+                OutlinedTextField(
+                    value = aiSituation,
+                    onValueChange = { aiSituation = it },
+                    label = { Text("目前的情况（可留空）") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 3,
+                )
+            },
+        )
     }
 
     // ── 格局详情：点按弹出教材原文 ──

@@ -20,4 +20,5 @@ data class CaseEntity(
     val note: String = "",
     val huangLi: String = "",
     val feedback: String = "",
+    val aiReading: String = "",
 )

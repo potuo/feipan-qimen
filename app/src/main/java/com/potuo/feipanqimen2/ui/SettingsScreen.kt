@@ -20,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -31,7 +32,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.potuo.feipanqimen2.AiAssistant
 import com.potuo.feipanqimen2.ui.components.CollapsibleSection
 import com.potuo.feipanqimen2.ui.components.QimenButton
 import com.potuo.feipanqimen2.ui.theme.QimenDimens
@@ -140,6 +143,38 @@ fun SettingsScreen(
                         color = MaterialTheme.colorScheme.primary,
                     )
                 }
+            }
+
+            // ── 玄鉴 ──
+            CollapsibleSection(title = "玄鉴") {
+                var aiEnabled by remember {
+                    mutableStateOf(AiAssistant.readConfig(context).enabled)
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "启用玄鉴",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    Switch(
+                        checked = aiEnabled,
+                        onCheckedChange = { on ->
+                            aiEnabled = on
+                            val cfg = AiAssistant.readConfig(context).copy(enabled = on)
+                            AiAssistant.saveConfig(context, cfg)
+                        },
+                    )
+                }
+                Text(
+                    "玄鉴以飞盘奇门断法为纲，佐以自备资料，为盘面参断吉凶。意见仅供参考，不可尽信。",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = QimenDimens.spacingSm),
+                )
             }
 
             // ── 排盘设置 ──

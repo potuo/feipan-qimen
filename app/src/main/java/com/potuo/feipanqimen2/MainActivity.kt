@@ -44,6 +44,7 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.DrawerValue
@@ -93,10 +94,12 @@ import com.potuo.feipanqimen2.ui.AboutScreen
 import com.potuo.feipanqimen2.ui.CaseDetailScreen
 import com.potuo.feipanqimen2.ui.CaseListScreen
 import com.potuo.feipanqimen2.ui.HuangLiScreen
+import com.potuo.feipanqimen2.AiAssistant
 import com.potuo.feipanqimen2.ui.InputScreen
 import com.potuo.feipanqimen2.ui.LearnScreen
 import com.potuo.feipanqimen2.ui.ResultScreen
 import com.potuo.feipanqimen2.ui.SettingsScreen
+import com.potuo.feipanqimen2.ui.XuanJianConfigScreen
 import com.potuo.feipanqimen2.ui.components.QimenButton
 import com.potuo.feipanqimen2.ui.components.QimenDialog
 import com.potuo.feipanqimen2.ui.theme.FeipanQimenTheme
@@ -163,6 +166,7 @@ fun MainApp(
     var section by remember { mutableStateOf(Section.PAN) }
     var showResult by remember { mutableStateOf(false) }
     var detailCaseId by remember { mutableStateOf<Long?>(null) }
+    var showXuanJianConfig by remember { mutableStateOf(false) }
     var lastBackPress by remember { mutableLongStateOf(0L) }
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -228,13 +232,16 @@ fun MainApp(
     BackHandler(enabled = drawerState.isOpen) {
         scope.launch { drawerState.close() }
     }
-    BackHandler(enabled = !drawerState.isOpen && inDetail) {
+    BackHandler(enabled = !drawerState.isOpen && showXuanJianConfig) {
+        showXuanJianConfig = false
+    }
+    BackHandler(enabled = !drawerState.isOpen && !showXuanJianConfig && inDetail) {
         detailCaseId = null
     }
-    BackHandler(enabled = !drawerState.isOpen && !inDetail && showResult) {
+    BackHandler(enabled = !drawerState.isOpen && !showXuanJianConfig && !inDetail && showResult) {
         showResult = false
     }
-    BackHandler(enabled = !drawerState.isOpen && !inDetail && !showResult) {
+    BackHandler(enabled = !drawerState.isOpen && !showXuanJianConfig && !inDetail && !showResult) {
         val now = System.currentTimeMillis()
         if (now - lastBackPress < 2000) {
             (context as? ComponentActivity)?.finish()
@@ -245,6 +252,7 @@ fun MainApp(
     }
 
     val title = when {
+        showXuanJianConfig -> "玄鉴配置"
         inDetail -> "案例详情"
         section == Section.PAN && showResult -> "已起盘"
         else -> section.title
@@ -315,6 +323,17 @@ fun MainApp(
                     },
                     icon = { Icon(Icons.Default.Settings, contentDescription = null) },
                 )
+                if (AiAssistant.readConfig(context).enabled) {
+                    NavigationDrawerItem(
+                        label = { Text("玄鉴") },
+                        selected = showXuanJianConfig,
+                        onClick = {
+                            showXuanJianConfig = true
+                            scope.launch { drawerState.close() }
+                        },
+                        icon = { Icon(Icons.Default.AutoAwesome, contentDescription = null) },
+                    )
+                }
                 Spacer(modifier = Modifier.weight(1f))
                 // 黑白切换按钮（仅图标，带动效）
                 Row(
@@ -355,7 +374,11 @@ fun MainApp(
                 TopAppBar(
                     title = { Text(title, fontWeight = FontWeight.SemiBold) },
                     navigationIcon = {
-                        if (inDetail || (section == Section.PAN && showResult)) {
+                        if (showXuanJianConfig) {
+                            IconButton(onClick = { showXuanJianConfig = false }) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                            }
+                        } else if (inDetail || (section == Section.PAN && showResult)) {
                             IconButton(onClick = {
                                 if (inDetail) detailCaseId = null else showResult = false
                             }) {
@@ -375,7 +398,7 @@ fun MainApp(
         ) { padding ->
             Box(modifier = Modifier.padding(padding)) {
                 AnimatedContent(
-                    targetState = NavTarget(section, showResult, detailCaseId),
+                    targetState = NavTarget(section, showResult, detailCaseId, showXuanJianConfig),
                     transitionSpec = {
                         (fadeIn(tween(220)) + slideInHorizontally(tween(240)) { it / 14 })
                             .togetherWith(fadeOut(tween(160)) + slideOutHorizontally(tween(160)) { -it / 14 })
@@ -383,6 +406,9 @@ fun MainApp(
                     label = "screenTransition",
                 ) { target ->
                     when {
+                        target.showXuanJianConfig -> XuanJianConfigScreen(
+                            onBack = { showXuanJianConfig = false },
+                        )
                         target.detailCaseId != null -> CaseDetailScreen(
                             viewModel = viewModel,
                             caseId = target.detailCaseId!!,
@@ -516,6 +542,7 @@ private data class NavTarget(
     val section: Section,
     val showResult: Boolean,
     val detailCaseId: Long?,
+    val showXuanJianConfig: Boolean = false,
 )
 
 /** 启动动画：罗盘金环旋转 + 标题浮现（跟随主题配色与明暗） */
