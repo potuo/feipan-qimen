@@ -2,7 +2,6 @@ package com.potuo.feipanqimen2
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.Typeface
@@ -103,7 +102,6 @@ object QimenShareImage {
             val info = result.palaces[palaceNum] ?: return@forEachIndexed
             val isZhiFu = palaceNum == result.zhiFuPalace
             val isZhiShi = palaceNum == result.zhiShiPalace
-            val isCenter = palaceNum == 5
 
             cellBg.color = palette.paper.toArgb()
             canvas.drawRect(x, y, x + cell, y + cell, cellBg)

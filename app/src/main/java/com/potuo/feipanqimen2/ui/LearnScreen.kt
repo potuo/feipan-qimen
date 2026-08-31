@@ -506,7 +506,7 @@ private fun ReaderView(vol: VolumeInfo, onBack: () -> Unit) {
 /** 飞盘总纲：教材《奇门基础资料 2023版教》分卷阅读（md 排版 + 原图 + 目录/搜索/位置记忆） */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LearnScreen(onBack: () -> Unit) {
+fun LearnScreen() {
     var currentVolume by remember { mutableStateOf<VolumeInfo?>(null) }
 
     if (currentVolume == null) {

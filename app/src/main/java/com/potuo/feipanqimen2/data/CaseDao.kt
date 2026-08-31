@@ -9,26 +9,8 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface CaseDao {
-    @Query("SELECT * FROM cases ORDER BY createTime DESC")
-    fun getAllCases(): Flow<List<CaseEntity>>
-
     @Query("SELECT * FROM cases WHERE id = :id")
     suspend fun getCaseById(id: Long): CaseEntity?
-
-    @Query(
-        """
-        SELECT * FROM cases WHERE
-            siZhu LIKE '%' || :query || '%' OR
-            CAST(juNumber AS TEXT) LIKE '%' || :query || '%' OR
-            jieQi LIKE '%' || :query || '%' OR
-            tags LIKE '%' || :query || '%' OR
-            note LIKE '%' || :query || '%' OR
-            panDate LIKE '%' || :query || '%' OR
-            dunType LIKE '%' || :query || '%'
-        ORDER BY createTime DESC
-        """,
-    )
-    fun searchCases(query: String): Flow<List<CaseEntity>>
 
     @Insert
     suspend fun insert(caseEntity: CaseEntity): Long
@@ -39,30 +21,8 @@ interface CaseDao {
     @Delete
     suspend fun delete(caseEntity: CaseEntity)
 
-    @Query("DELETE FROM cases")
-    suspend fun deleteAll()
-
     @Query("SELECT * FROM cases ORDER BY createTime DESC")
     suspend fun getAllCasesOnce(): List<CaseEntity>
-
-    @Query("SELECT * FROM cases WHERE category = :category ORDER BY createTime DESC")
-    fun getCasesByCategory(category: String): Flow<List<CaseEntity>>
-
-    @Query(
-        """
-        SELECT * FROM cases WHERE category = :category AND (
-            siZhu LIKE '%' || :query || '%' OR
-            CAST(juNumber AS TEXT) LIKE '%' || :query || '%' OR
-            jieQi LIKE '%' || :query || '%' OR
-            tags LIKE '%' || :query || '%' OR
-            note LIKE '%' || :query || '%' OR
-            panDate LIKE '%' || :query || '%' OR
-            dunType LIKE '%' || :query || '%'
-        )
-        ORDER BY createTime DESC
-        """,
-    )
-    fun searchCasesByCategory(query: String, category: String): Flow<List<CaseEntity>>
 
     /**
      * 组合筛选：搜索关键词 × 事项类别 × 反馈状态（'全部'/'已反馈'/'未反馈'）。

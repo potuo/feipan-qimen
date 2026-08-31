@@ -13,18 +13,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -38,7 +33,6 @@ import com.potuo.feipanqimen2.data.CASE_CATEGORIES
 import com.potuo.feipanqimen2.data.CaseEntity
 import com.potuo.feipanqimen2.ui.components.EmptyState
 import com.potuo.feipanqimen2.ui.components.MiniBoard
-import com.potuo.feipanqimen2.ui.components.QimenTopBar
 import com.potuo.feipanqimen2.ui.theme.CardShape
 import com.potuo.feipanqimen2.ui.theme.QimenDimens
 import com.potuo.feipanqimen2.viewmodel.MainViewModel
@@ -51,7 +45,6 @@ import java.util.Locale
 fun CaseListScreen(
     viewModel: MainViewModel,
     onCaseClick: (Long) -> Unit,
-    onSettingsClick: () -> Unit,
     onGoToPan: () -> Unit,
 ) {
     val cases by viewModel.cases.collectAsState()

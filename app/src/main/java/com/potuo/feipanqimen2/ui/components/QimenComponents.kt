@@ -9,7 +9,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInVertically
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -39,7 +38,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -131,7 +129,6 @@ fun QimenBoard(
                             info = info,
                             result = result,
                             dark = dark,
-                            isCenter = palaceNum == 5,
                         )
                     }
                     if (!isVisible) {
@@ -148,7 +145,6 @@ private fun PalaceCell(
     info: PalaceInfo,
     result: QimenResult,
     dark: Boolean,
-    isCenter: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val palette = LocalQimenPalette.current

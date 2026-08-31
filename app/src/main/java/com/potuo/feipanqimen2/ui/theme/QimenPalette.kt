@@ -15,7 +15,6 @@ data class QimenPalette(
     val paper: Color,           // 宫格底色
     val palaceBg: Color,        // 暗色宫格底
     val gridBorder: Color,      // 宫格线
-    val centerBg: Color,        // 中宫底
     val secondaryText: Color,   // 神名等次级文字
 )
 
@@ -30,7 +29,6 @@ object QimenPalettes {
         paper = Color(0xFFF2EDE3),
         palaceBg = Color(0xFFF2EDE3),
         gridBorder = Color(0xFF5C6570),
-        centerBg = Color(0xFFFFF8EC),
         secondaryText = Color(0xFF5C6570),
     )
 
@@ -43,7 +41,6 @@ object QimenPalettes {
         paper = Color(0xFF1A1C20),
         palaceBg = Color(0xFF2A2D33),
         gridBorder = Color(0xFF5C6570),
-        centerBg = Color(0xFF2A2518),
         secondaryText = Color(0xFFB8B2A0),
     )
 
@@ -56,7 +53,6 @@ object QimenPalettes {
         paper = Color(0xFFFBFAFF),
         palaceBg = Color(0xFFFBFAFF),
         gridBorder = Color(0xFFC8C5D0),
-        centerBg = Color(0xFFF4F1FA),
         secondaryText = Color(0xFF625B71),
     )
 
@@ -69,7 +65,6 @@ object QimenPalettes {
         paper = Color(0xFF14121A),
         palaceBg = Color(0xFF1B1821),
         gridBorder = Color(0xFF47464F),
-        centerBg = Color(0xFF26232C),
         secondaryText = Color(0xFFC8C5D0),
     )
 
@@ -82,7 +77,6 @@ object QimenPalettes {
         paper = Color(0xFFF2F5F1),
         palaceBg = Color(0xFFF2F5F1),
         gridBorder = Color(0xFF9AA89F),
-        centerBg = Color(0xFFFFF9EC),
         secondaryText = Color(0xFF6B7A72),
     )
 
@@ -95,7 +89,6 @@ object QimenPalettes {
         paper = Color(0xFF121815),
         palaceBg = Color(0xFF1C2420),
         gridBorder = Color(0xFF3E4A44),
-        centerBg = Color(0xFF1E2A22),
         secondaryText = Color(0xFFA9B8AF),
     )
 }

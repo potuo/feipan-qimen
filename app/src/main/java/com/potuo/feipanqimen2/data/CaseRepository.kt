@@ -27,11 +27,6 @@ val CASE_CATEGORIES = listOf("求财", "事业", "婚姻", "健康", "出行", "
 class CaseRepository(private val dao: CaseDao) {
     private val gson = Gson()
 
-    fun getAllCases(): Flow<List<CaseEntity>> = dao.getAllCases()
-
-    fun searchCases(query: String): Flow<List<CaseEntity>> =
-        if (query.isBlank()) dao.getAllCases() else dao.searchCases(query)
-
     suspend fun getCaseById(id: Long): CaseEntity? = dao.getCaseById(id)
 
     suspend fun insert(caseEntity: CaseEntity): Long = dao.insert(caseEntity)
@@ -41,11 +36,6 @@ class CaseRepository(private val dao: CaseDao) {
     suspend fun delete(caseEntity: CaseEntity) = dao.delete(caseEntity)
 
     suspend fun getAllCasesOnce(): List<CaseEntity> = dao.getAllCasesOnce()
-
-    fun getCasesByCategory(category: String): Flow<List<CaseEntity>> = dao.getCasesByCategory(category)
-
-    fun searchCasesByCategory(query: String, category: String): Flow<List<CaseEntity>> =
-        dao.searchCasesByCategory(query, category)
 
     fun searchCasesFiltered(query: String, category: String, feedbackFilter: String): Flow<List<CaseEntity>> =
         dao.searchCasesFiltered(query, category, feedbackFilter)

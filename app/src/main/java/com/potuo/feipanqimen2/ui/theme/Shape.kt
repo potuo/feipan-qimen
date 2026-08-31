@@ -13,6 +13,5 @@ val QimenShapes = Shapes(
     extraLarge = RoundedCornerShape(28.dp),
 )
 
-val CapsuleShape = RoundedCornerShape(28.dp)
 val CardShape = RoundedCornerShape(16.dp)
 val PalaceShape = RoundedCornerShape(12.dp)

@@ -1,7 +1,5 @@
 package com.potuo.feipanqimen2.qimen
 
-import com.nlf.calendar.EightChar
-import com.nlf.calendar.JieQi
 import com.nlf.calendar.Lunar
 import com.nlf.calendar.Solar
 import java.time.LocalDateTime

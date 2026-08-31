@@ -69,9 +69,7 @@ fun SettingsScreen(
     viewModel: MainViewModel,
     isDark: Boolean = false,
     themeName: String = "classic",
-    onToggleDark: () -> Unit = {},
     onSelectTheme: (String) -> Unit = {},
-    onBack: () -> Unit,
 ) {
     val context = LocalContext.current
     var longitudeText by remember {

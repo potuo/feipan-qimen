@@ -55,7 +55,7 @@ object LogManager {
         File(ctx.filesDir, "$logDirName/app_${dayFmt.format(Date())}.log")
 
     /** 日志目录 */
-    fun logDir(ctx: Context): File = File(ctx.filesDir, logDirName)
+    private fun logDir(ctx: Context): File = File(ctx.filesDir, logDirName)
 
     /** 全部日志合并文本（导出用） */
     fun exportAllLogs(ctx: Context): String {

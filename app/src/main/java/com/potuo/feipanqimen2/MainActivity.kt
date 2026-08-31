@@ -14,14 +14,11 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -76,7 +73,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -100,7 +96,6 @@ import com.potuo.feipanqimen2.ui.components.QimenButton
 import com.potuo.feipanqimen2.ui.components.QimenOutlinedButton
 import com.potuo.feipanqimen2.ui.theme.FeipanQimenTheme
 import com.potuo.feipanqimen2.ui.theme.LocalQimenPalette
-import com.potuo.feipanqimen2.ui.theme.QimenColors
 import com.potuo.feipanqimen2.viewmodel.MainViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -388,22 +383,19 @@ fun MainApp(
                     section == Section.CASES -> CaseListScreen(
                         viewModel = viewModel,
                         onCaseClick = { detailCaseId = it },
-                        onSettingsClick = { section = Section.SETTINGS },
                         onGoToPan = {
                             section = Section.PAN
                             showResult = false
                         },
                     )
                     section == Section.HUANGLI -> HuangLiScreen()
-                    section == Section.LEARN -> LearnScreen(onBack = { section = Section.PAN })
+                    section == Section.LEARN -> LearnScreen()
                     section == Section.ABOUT -> AboutScreen()
                     else -> SettingsScreen(
                         viewModel = viewModel,
                         isDark = isDark,
                         themeName = themeName,
-                        onToggleDark = onToggleDark,
                         onSelectTheme = onSelectTheme,
-                        onBack = { section = Section.PAN },
                     )
                 }
             }
