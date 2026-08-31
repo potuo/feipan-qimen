@@ -107,6 +107,56 @@ val ZiweiDarkColors = darkColorScheme(
     outlineVariant = Color(0xFF47464F),
 )
 
+// ── 青玉（青绿 · 山水）—— 吾推荐的第三套配色：绢素晴山 / 夜山松烟 ──
+
+/** 青玉 · 浅色（绢素·晴山） */
+val JadeLightColors = lightColorScheme(
+    primary = Color(0xFF1E7A5C),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFF1E7A5C).copy(alpha = 0.14f),
+    onPrimaryContainer = Color(0xFF1E7A5C),
+    secondary = Color(0xFFB08D57),
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFFB08D57).copy(alpha = 0.18f),
+    onSecondaryContainer = Color(0xFFB08D57),
+    tertiary = Color(0xFF5C6B66),
+    onTertiary = Color.White,
+    background = Color(0xFFF2F5F1),
+    onBackground = Color(0xFF1E2422),
+    surface = Color(0xFFF8FAF6),
+    onSurface = Color(0xFF1E2422),
+    surfaceVariant = Color(0xFFE3E9E3),
+    onSurfaceVariant = Color(0xFF55605A),
+    surfaceContainerLow = Color(0xFFEDF1EC),
+    surfaceContainerHigh = Color(0xFFE5EBE5),
+    outline = Color(0xFF7A877F),
+    outlineVariant = Color(0xFFC3CDC5),
+)
+
+/** 青玉 · 暗色（夜山·松烟） */
+val JadeDarkColors = darkColorScheme(
+    primary = Color(0xFF6FD4AC),
+    onPrimary = Color(0xFF0B3B2C),
+    primaryContainer = Color(0xFF23604A),
+    onPrimaryContainer = Color(0xFFB8F0D8),
+    secondary = Color(0xFFC9A96A),
+    onSecondary = Color(0xFF2E1F0A),
+    secondaryContainer = Color(0xFF4A3A1C),
+    onSecondaryContainer = Color(0xFFE8D5B0),
+    tertiary = Color(0xFFA8B4AC),
+    onTertiary = Color(0xFF1C2420),
+    background = Color(0xFF121815),
+    onBackground = Color(0xFFE8F0EC),
+    surface = Color(0xFF181F1B),
+    onSurface = Color(0xFFE8F0EC),
+    surfaceVariant = Color(0xFF26312B),
+    onSurfaceVariant = Color(0xFFA9B8AF),
+    surfaceContainerLow = Color(0xFF151C18),
+    surfaceContainerHigh = Color(0xFF1E2822),
+    outline = Color(0xFF3E4A44),
+    outlineVariant = Color(0xFF2A352F),
+)
+
 @Composable
 fun FeipanQimenTheme(
     isDark: Boolean = false,
@@ -116,12 +166,16 @@ fun FeipanQimenTheme(
     val colorScheme = when {
         themeName == "ziwei" && isDark -> ZiweiDarkColors
         themeName == "ziwei" -> ZiweiLightColors
+        themeName == "jade" && isDark -> JadeDarkColors
+        themeName == "jade" -> JadeLightColors
         isDark -> ClassicDarkColors
         else -> ClassicLightColors
     }
     val qimenPalette = when {
         themeName == "ziwei" && isDark -> QimenPalettes.ZiweiDark
         themeName == "ziwei" -> QimenPalettes.ZiweiLight
+        themeName == "jade" && isDark -> QimenPalettes.JadeDark
+        themeName == "jade" -> QimenPalettes.JadeLight
         isDark -> QimenPalettes.ClassicDark
         else -> QimenPalettes.ClassicLight
     }

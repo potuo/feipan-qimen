@@ -72,6 +72,32 @@ object QimenPalettes {
         centerBg = Color(0xFF26232C),
         secondaryText = Color(0xFFC8C5D0),
     )
+
+    /** 青玉 · 浅色（绢素·晴山，青绿山水） */
+    val JadeLight = QimenPalette(
+        cinnabar = Color(0xFF1E7A5C),
+        gold = Color(0xFFB08D57),
+        slate = Color(0xFF5C6B66),
+        inkText = Color(0xFF1E2422),
+        paper = Color(0xFFF2F5F1),
+        palaceBg = Color(0xFFF2F5F1),
+        gridBorder = Color(0xFF9AA89F),
+        centerBg = Color(0xFFFFF9EC),
+        secondaryText = Color(0xFF6B7A72),
+    )
+
+    /** 青玉 · 暗色（夜山·松烟） */
+    val JadeDark = QimenPalette(
+        cinnabar = Color(0xFF6FD4AC),
+        gold = Color(0xFFC9A96A),
+        slate = Color(0xFFA8B4AC),
+        inkText = Color(0xFFE8F0EC),
+        paper = Color(0xFF121815),
+        palaceBg = Color(0xFF1C2420),
+        gridBorder = Color(0xFF3E4A44),
+        centerBg = Color(0xFF1E2A22),
+        secondaryText = Color(0xFFA9B8AF),
+    )
 }
 
 /** 当前主题对应的盘面色板（由 FeipanQimenTheme 注入） */

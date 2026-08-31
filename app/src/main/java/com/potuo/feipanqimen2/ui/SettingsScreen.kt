@@ -109,6 +109,11 @@ fun SettingsScreen(
                         selected = themeName == "ziwei",
                         onClick = { onSelectTheme("ziwei") },
                     )
+                    ThemeOptionRow(
+                        name = "青玉",
+                        selected = themeName == "jade",
+                        onClick = { onSelectTheme("jade") },
+                    )
                 }
                 HorizontalDivider(modifier = Modifier.padding(vertical = QimenDimens.spacingSm))
                 Row(
