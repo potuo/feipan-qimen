@@ -70,6 +70,7 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
     var huangLiExpanded by remember { mutableStateOf(false) }
     var patternDetail by remember { mutableStateOf<PatternInfo?>(null) }
     var selectedPalace by remember { mutableStateOf<Int?>(null) }
+    var boardAnimate by remember { mutableStateOf(true) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val palette = LocalQimenPalette.current
@@ -134,7 +135,28 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
             }
         }
 
-        QimenBoard(result = r, animate = true, onPalaceClick = { selectedPalace = it })
+        // ── 时辰快捷对比 ──
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(QimenDimens.spacingMd),
+        ) {
+            QimenOutlinedButton(
+                onClick = {
+                    boardAnimate = false
+                    viewModel.shiftHour(-1)
+                },
+                modifier = Modifier.weight(1f),
+            ) { Text("‹ 上一时辰") }
+            QimenOutlinedButton(
+                onClick = {
+                    boardAnimate = false
+                    viewModel.shiftHour(1)
+                },
+                modifier = Modifier.weight(1f),
+            ) { Text("下一时辰 ›") }
+        }
+
+        QimenBoard(result = r, animate = boardAnimate, onPalaceClick = { selectedPalace = it })
 
         // ── 格局（据《奇门基础资料 2023版教》第三卷）──
         if (patterns.isNotEmpty()) {

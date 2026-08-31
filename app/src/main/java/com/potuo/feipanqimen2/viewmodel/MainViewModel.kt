@@ -92,6 +92,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun setDate(date: LocalDate) { _selectedDate.value = date }
     fun setHourIndex(index: Int) { _selectedHourIndex.value = index }
     fun setNote(note: String) { _note.value = note }
+
+    /** 时辰快捷对比：按 delta（±1）切换时辰并重算盘面 */
+    fun shiftHour(delta: Int) {
+        val newIndex = (_selectedHourIndex.value + delta + 12) % 12
+        _selectedHourIndex.value = newIndex
+        calculate()
+    }
     fun setTags(tags: String) { _tags.value = tags }
     fun setCategory(category: String) { _selectedCategory.value = category }
     fun setSearchQuery(query: String) { _searchQuery.value = query }

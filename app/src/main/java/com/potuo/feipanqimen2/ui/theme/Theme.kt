@@ -7,7 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 
-// 主题：古典金（黄/红/金）浅色 / 暗色 两态
+// 主题：古典金 / 紫微 / 玄墨 / 青花 / 赭石 各两态
 
 /** 古典金 · 浅色（宣纸） */
 val ClassicLightColors = lightColorScheme(
@@ -107,54 +107,154 @@ val ZiweiDarkColors = darkColorScheme(
     outlineVariant = Color(0xFF47464F),
 )
 
-// ── 青玉（青绿 · 山水）—— 吾推荐的第三套配色：绢素晴山 / 夜山松烟 ──
+// ── 玄墨（夜观星象 · 罗盘）：玄黑 + 金，朱砂点睛 ──
 
-/** 青玉 · 浅色（绢素·晴山） */
-val JadeLightColors = lightColorScheme(
-    primary = Color(0xFF1E7A5C),
+/** 玄墨 · 浅色（宣纸·墨金） */
+val XuanMoLightColors = lightColorScheme(
+    primary = Color(0xFFB8912A),
     onPrimary = Color.White,
-    primaryContainer = Color(0xFF1E7A5C).copy(alpha = 0.14f),
-    onPrimaryContainer = Color(0xFF1E7A5C),
-    secondary = Color(0xFFB08D57),
+    primaryContainer = Color(0xFFB8912A).copy(alpha = 0.14f),
+    onPrimaryContainer = Color(0xFF8A6B1F),
+    secondary = Color(0xFFC0392B),
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFFB08D57).copy(alpha = 0.18f),
-    onSecondaryContainer = Color(0xFFB08D57),
-    tertiary = Color(0xFF5C6B66),
+    secondaryContainer = Color(0xFFC0392B).copy(alpha = 0.14f),
+    onSecondaryContainer = Color(0xFF8C2E1F),
+    tertiary = Color(0xFF6B6255),
     onTertiary = Color.White,
-    background = Color(0xFFF2F5F1),
-    onBackground = Color(0xFF1E2422),
-    surface = Color(0xFFF8FAF6),
-    onSurface = Color(0xFF1E2422),
-    surfaceVariant = Color(0xFFE3E9E3),
-    onSurfaceVariant = Color(0xFF55605A),
-    surfaceContainerLow = Color(0xFFEDF1EC),
-    surfaceContainerHigh = Color(0xFFE5EBE5),
-    outline = Color(0xFF7A877F),
-    outlineVariant = Color(0xFFC3CDC5),
+    background = Color(0xFFF2EFE6),
+    onBackground = Color(0xFF1F1C16),
+    surface = Color(0xFFFAF7F0),
+    onSurface = Color(0xFF1F1C16),
+    surfaceVariant = Color(0xFFE8E3D6),
+    onSurfaceVariant = Color(0xFF57503F),
+    surfaceContainerLow = Color(0xFFF5F2E8),
+    surfaceContainerHigh = Color(0xFFEFEBDD),
+    outline = Color(0xFFA89E8A),
+    outlineVariant = Color(0xFFD0C8B4),
 )
 
-/** 青玉 · 暗色（夜山·松烟） */
-val JadeDarkColors = darkColorScheme(
-    primary = Color(0xFF6FD4AC),
-    onPrimary = Color(0xFF0B3B2C),
-    primaryContainer = Color(0xFF23604A),
-    onPrimaryContainer = Color(0xFFB8F0D8),
-    secondary = Color(0xFFC9A96A),
-    onSecondary = Color(0xFF2E1F0A),
-    secondaryContainer = Color(0xFF4A3A1C),
-    onSecondaryContainer = Color(0xFFE8D5B0),
-    tertiary = Color(0xFFA8B4AC),
-    onTertiary = Color(0xFF1C2420),
-    background = Color(0xFF121815),
-    onBackground = Color(0xFFE8F0EC),
-    surface = Color(0xFF181F1B),
-    onSurface = Color(0xFFE8F0EC),
-    surfaceVariant = Color(0xFF26312B),
-    onSurfaceVariant = Color(0xFFA9B8AF),
-    surfaceContainerLow = Color(0xFF151C18),
-    surfaceContainerHigh = Color(0xFF1E2822),
-    outline = Color(0xFF3E4A44),
-    outlineVariant = Color(0xFF2A352F),
+/** 玄墨 · 暗色（玄黑·金） */
+val XuanMoDarkColors = darkColorScheme(
+    primary = Color(0xFFC9A227),
+    onPrimary = Color(0xFF2E2204),
+    primaryContainer = Color(0xFF4A3A0A),
+    onPrimaryContainer = Color(0xFFF2E3B0),
+    secondary = Color(0xFFE0806F),
+    onSecondary = Color(0xFF3A0D06),
+    secondaryContainer = Color(0xFF8C2E1F),
+    onSecondaryContainer = Color(0xFFFFDAD4),
+    tertiary = Color(0xFF9A9186),
+    onTertiary = Color(0xFF1C1C1C),
+    background = Color(0xFF161616),
+    onBackground = Color(0xFFEDE8DC),
+    surface = Color(0xFF1F1C16),
+    onSurface = Color(0xFFEDE8DC),
+    surfaceVariant = Color(0xFF2A2720),
+    onSurfaceVariant = Color(0xFFB0A896),
+    surfaceContainerLow = Color(0xFF1A1A1A),
+    surfaceContainerHigh = Color(0xFF26221C),
+    outline = Color(0xFF4A453C),
+    outlineVariant = Color(0xFF3A362F),
+)
+
+// ── 青花（靛蓝 · 瓷器）：靛蓝 + 瓷白，朱砂点睛 ──
+
+/** 青花 · 浅色（瓷白·靛蓝） */
+val QingHuaLightColors = lightColorScheme(
+    primary = Color(0xFF2B4A7A),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFF2B4A7A).copy(alpha = 0.14f),
+    onPrimaryContainer = Color(0xFF1A3358),
+    secondary = Color(0xFFC0392B),
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFFC0392B).copy(alpha = 0.14f),
+    onSecondaryContainer = Color(0xFF8C2E1F),
+    tertiary = Color(0xFF5A6B7A),
+    onTertiary = Color.White,
+    background = Color(0xFFF4F6F8),
+    onBackground = Color(0xFF1A2233),
+    surface = Color(0xFFFAFBFC),
+    onSurface = Color(0xFF1A2233),
+    surfaceVariant = Color(0xFFE4E9EF),
+    onSurfaceVariant = Color(0xFF4A5A6A),
+    surfaceContainerLow = Color(0xFFEEF1F5),
+    surfaceContainerHigh = Color(0xFFE8EDF2),
+    outline = Color(0xFF8A99AA),
+    outlineVariant = Color(0xFFC0C8D4),
+)
+
+/** 青花 · 暗色（藏蓝·靛青） */
+val QingHuaDarkColors = darkColorScheme(
+    primary = Color(0xFF7A9CC8),
+    onPrimary = Color(0xFF0E1A30),
+    primaryContainer = Color(0xFF22374F),
+    onPrimaryContainer = Color(0xFFD4E2F4),
+    secondary = Color(0xFFE0806F),
+    onSecondary = Color(0xFF3A0D06),
+    secondaryContainer = Color(0xFF8C2E1F),
+    onSecondaryContainer = Color(0xFFFFDAD4),
+    tertiary = Color(0xFF8A9BB0),
+    onTertiary = Color(0xFF141B28),
+    background = Color(0xFF1A2233),
+    onBackground = Color(0xFFE8EDF4),
+    surface = Color(0xFF202A3C),
+    onSurface = Color(0xFFE8EDF4),
+    surfaceVariant = Color(0xFF2A3548),
+    onSurfaceVariant = Color(0xFFA8B4C4),
+    surfaceContainerLow = Color(0xFF161E2C),
+    surfaceContainerHigh = Color(0xFF242E40),
+    outline = Color(0xFF4A5A70),
+    outlineVariant = Color(0xFF3A4A60),
+)
+
+// ── 赭石（古籍 · 帛书）：赭石 + 秋香，朱砂点睛 ──
+
+/** 赭石 · 浅色（米黄·赭石） */
+val ZheShiLightColors = lightColorScheme(
+    primary = Color(0xFFA0653A),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFFA0653A).copy(alpha = 0.16f),
+    onPrimaryContainer = Color(0xFF7A4A2A),
+    secondary = Color(0xFFC0392B),
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFFC0392B).copy(alpha = 0.14f),
+    onSecondaryContainer = Color(0xFF8C2E1F),
+    tertiary = Color(0xFF7A6A5A),
+    onTertiary = Color.White,
+    background = Color(0xFFF5EBDC),
+    onBackground = Color(0xFF2A1F18),
+    surface = Color(0xFFFBF4E8),
+    onSurface = Color(0xFF2A1F18),
+    surfaceVariant = Color(0xFFEBDFCC),
+    onSurfaceVariant = Color(0xFF5A4A3A),
+    surfaceContainerLow = Color(0xFFF2E9D8),
+    surfaceContainerHigh = Color(0xFFEDE2CF),
+    outline = Color(0xFF8A7A6A),
+    outlineVariant = Color(0xFFC8B8A4),
+)
+
+/** 赭石 · 暗色（深赭·秋香） */
+val ZheShiDarkColors = darkColorScheme(
+    primary = Color(0xFFC9A86A),
+    onPrimary = Color(0xFF2E1F0A),
+    primaryContainer = Color(0xFF4A3A1C),
+    onPrimaryContainer = Color(0xFFF0E0C0),
+    secondary = Color(0xFFE0806F),
+    onSecondary = Color(0xFF3A0D06),
+    secondaryContainer = Color(0xFF8C2E1F),
+    onSecondaryContainer = Color(0xFFFFDAD4),
+    tertiary = Color(0xFFA89A88),
+    onTertiary = Color(0xFF1C160F),
+    background = Color(0xFF2A1F18),
+    onBackground = Color(0xFFF0E8DC),
+    surface = Color(0xFF33261D),
+    onSurface = Color(0xFFF0E8DC),
+    surfaceVariant = Color(0xFF40332A),
+    onSurfaceVariant = Color(0xFFB8A898),
+    surfaceContainerLow = Color(0xFF241B14),
+    surfaceContainerHigh = Color(0xFF3A2E24),
+    outline = Color(0xFF5A4A3A),
+    outlineVariant = Color(0xFF4A3D30),
 )
 
 @Composable
@@ -166,16 +266,24 @@ fun FeipanQimenTheme(
     val colorScheme = when {
         themeName == "ziwei" && isDark -> ZiweiDarkColors
         themeName == "ziwei" -> ZiweiLightColors
-        themeName == "jade" && isDark -> JadeDarkColors
-        themeName == "jade" -> JadeLightColors
+        themeName == "xuanmo" && isDark -> XuanMoDarkColors
+        themeName == "xuanmo" -> XuanMoLightColors
+        themeName == "qinghua" && isDark -> QingHuaDarkColors
+        themeName == "qinghua" -> QingHuaLightColors
+        themeName == "zheshi" && isDark -> ZheShiDarkColors
+        themeName == "zheshi" -> ZheShiLightColors
         isDark -> ClassicDarkColors
         else -> ClassicLightColors
     }
     val qimenPalette = when {
         themeName == "ziwei" && isDark -> QimenPalettes.ZiweiDark
         themeName == "ziwei" -> QimenPalettes.ZiweiLight
-        themeName == "jade" && isDark -> QimenPalettes.JadeDark
-        themeName == "jade" -> QimenPalettes.JadeLight
+        themeName == "xuanmo" && isDark -> QimenPalettes.XuanMoDark
+        themeName == "xuanmo" -> QimenPalettes.XuanMoLight
+        themeName == "qinghua" && isDark -> QimenPalettes.QingHuaDark
+        themeName == "qinghua" -> QimenPalettes.QingHuaLight
+        themeName == "zheshi" && isDark -> QimenPalettes.ZheShiDark
+        themeName == "zheshi" -> QimenPalettes.ZheShiLight
         isDark -> QimenPalettes.ClassicDark
         else -> QimenPalettes.ClassicLight
     }

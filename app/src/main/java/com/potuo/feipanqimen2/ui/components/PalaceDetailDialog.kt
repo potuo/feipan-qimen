@@ -14,6 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.potuo.feipanqimen2.PalaceRef
+import com.potuo.feipanqimen2.QiMenYanGua
 import com.potuo.feipanqimen2.qimen.QimenConstants
 import com.potuo.feipanqimen2.qimen.QimenResult
 import com.potuo.feipanqimen2.ui.theme.LocalQimenPalette
@@ -85,6 +86,29 @@ fun PalaceDetailDialog(
                         color = palette.cinnabar,
                         lineHeight = 20.sp,
                     )
+                }
+
+                // ── 奇门演卦（星门 / 门宫）──
+                val xingMen = QiMenYanGua.xingMenYanGua(info.star, info.gate)
+                val menGong = QiMenYanGua.menGongYanGua(info.gate, palaceNum)
+                if (xingMen != null || menGong != null) {
+                    SectionLabel("演卦")
+                    xingMen?.let {
+                        Text(
+                            "星门演卦：${it.hexagram}（${it.upperDesc} 上 / ${it.lowerDesc} 下）",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            lineHeight = 20.sp,
+                        )
+                    }
+                    menGong?.let {
+                        Text(
+                            "门宫演卦：${it.hexagram}（${it.upperDesc} 上 / ${it.lowerDesc} 下）",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            lineHeight = 20.sp,
+                        )
+                    }
                 }
             }
         },

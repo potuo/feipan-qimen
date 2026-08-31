@@ -18,6 +18,23 @@ data class PatternInfo(
  */
 object QimenPatternDetector {
 
+    // ── 正格干支组合常量（据 vol3 第十五章·正格）──
+    private val STEMS = listOf("甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸")
+
+    /** 天干五合：甲己、乙庚、丙辛、丁壬、戊癸 */
+    private val STEM_HE = mapOf(
+        "甲" to "己", "己" to "甲",
+        "乙" to "庚", "庚" to "乙",
+        "丙" to "辛", "辛" to "丙",
+        "丁" to "壬", "壬" to "丁",
+        "戊" to "癸", "癸" to "戊",
+    )
+
+    /** 支破格（双向）：庚癸、壬己、戊辛 */
+    private val STEM_PO = setOf(
+        setOf("庚", "癸"), setOf("壬", "己"), setOf("戊", "辛"),
+    )
+
     /** 检测盘面格局，返回格局列表（空亡恒在最后） */
     fun detect(result: QimenResult): List<PatternInfo> {
         val patterns = mutableListOf<PatternInfo>()
@@ -102,7 +119,13 @@ object QimenPatternDetector {
             }
         }
 
-        // 6. 空亡（提示性，恒最后）
+        // 6. 正格干支组合（进茹/退茹/前间/后间/五合/支破）
+        result.palaces.forEach { (palace, info) ->
+            val p = detectGanZhiPattern(info.heavenStem, info.earthStem, palace)
+            if (p != null) patterns.add(p)
+        }
+
+        // 7. 空亡（提示性，恒最后）
         if (result.kongWang.isNotBlank()) {
             patterns.add(
                 PatternInfo(
@@ -126,5 +149,41 @@ object QimenPatternDetector {
         "壬" -> "辰自刑，主是非缠绕"
         "癸" -> "寅刑巳，主口舌、小人"
         else -> "主难受、欺辱、刑罚"
+    }
+
+    /** 正格干支组合检测：进茹/退茹/前间/后间/五合/支破，未命中返回 null */
+    private fun detectGanZhiPattern(heaven: String, earth: String, palace: Int): PatternInfo? {
+        if (heaven.isEmpty() || earth.isEmpty()) return null
+        val hi = STEMS.indexOf(heaven)
+        val ei = STEMS.indexOf(earth)
+        if (hi < 0 || ei < 0) return null
+        val loc = "${palaceName(palace)}${palace}宫"
+        val gz = "${heaven}加$earth"
+
+        // 支破（凶）
+        if (STEM_PO.any { heaven in it && earth in it && heaven != earth }) {
+            return PatternInfo("支破", "${gz}落$loc，谋为不就、诸事难成", false)
+        }
+        // 五合（吉）
+        if (STEM_HE[heaven] == earth) {
+            return PatternInfo("相合", "${gz}落$loc，天干相合主和合顺遂", true)
+        }
+        // 前间（隔一进，凶）
+        if ((hi + 2) % 10 == ei && earth != "甲") {
+            return PatternInfo("前间", "${gz}落$loc，前进中途有阻拦", false)
+        }
+        // 后间（隔一退，凶）
+        if ((hi + 8) % 10 == ei && earth != "甲") {
+            return PatternInfo("后间", "${gz}落$loc，后退当中犯艰难", false)
+        }
+        // 进茹（进一，中性提示）
+        if ((hi + 1) % 10 == ei && earth != "甲") {
+            return PatternInfo("进茹", "${gz}落$loc，宜于进步", null)
+        }
+        // 退茹（退一，中性提示）
+        if ((hi + 9) % 10 == ei && earth != "甲") {
+            return PatternInfo("退茹", "${gz}落$loc，宜退步为美", null)
+        }
+        return null
     }
 }
