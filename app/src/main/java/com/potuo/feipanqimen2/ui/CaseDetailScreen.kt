@@ -1,5 +1,7 @@
 package com.potuo.feipanqimen2.ui
 
+import android.content.Intent
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -28,20 +30,25 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
+import com.potuo.feipanqimen2.QimenShareImage
 import com.potuo.feipanqimen2.data.CaseEntity
 import com.potuo.feipanqimen2.qimen.QimenConstants
 import com.potuo.feipanqimen2.ui.components.HuangLiCard
 import com.potuo.feipanqimen2.ui.components.QimenBoard
 import com.potuo.feipanqimen2.ui.components.QimenButton
+import com.potuo.feipanqimen2.ui.theme.LocalQimenPalette
 import com.potuo.feipanqimen2.ui.theme.QimenDimens
 import com.potuo.feipanqimen2.viewmodel.MainViewModel
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,11 +78,9 @@ fun CaseDetailScreen(
         }
     }
 
-    val exportLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
-        androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/json"),
-    ) { uri ->
-        uri?.let { case?.let { c -> viewModel.exportOne(c, it) } }
-    }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val palette = LocalQimenPalette.current
 
     val c = case
     val r = result
@@ -97,10 +102,22 @@ fun CaseDetailScreen(
             horizontalArrangement = Arrangement.End,
         ) {
             IconButton(onClick = {
-                val date = SimpleDateFormat("yyyyMMdd", Locale.CHINA).format(Date())
-                exportLauncher.launch("feipan_qimen_cases_$date.json")
+                scope.launch(Dispatchers.IO) {
+                    runCatching {
+                        val file = QimenShareImage.create(r, palette, File(context.cacheDir, "share"))
+                        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+                        val intent = Intent(Intent.ACTION_SEND).apply {
+                            type = "image/png"
+                            putExtra(Intent.EXTRA_STREAM, uri)
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }
+                        context.startActivity(Intent.createChooser(intent, "分享盘面"))
+                    }.onFailure { e ->
+                        Toast.makeText(context, "生成分享图失败：${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
             }) {
-                Icon(Icons.Default.Share, contentDescription = "导出")
+                Icon(Icons.Default.Share, contentDescription = "分享")
             }
             IconButton(onClick = { showDeleteDialog = true }) {
                 Icon(Icons.Default.Delete, contentDescription = "删除")

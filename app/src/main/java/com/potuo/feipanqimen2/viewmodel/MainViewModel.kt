@@ -23,7 +23,24 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+
+private fun hourToShiChenIndex(hour: Int): Int = when (hour) {
+    23, 0 -> 0
+    1, 2 -> 1
+    3, 4 -> 2
+    5, 6 -> 3
+    7, 8 -> 4
+    9, 10 -> 5
+    11, 12 -> 6
+    13, 14 -> 7
+    15, 16 -> 8
+    17, 18 -> 9
+    19, 20 -> 10
+    21, 22 -> 11
+    else -> 0
+}
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = CaseRepository(AppDatabase.getInstance(application).caseDao())
@@ -31,7 +48,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _selectedDate = MutableStateFlow(LocalDate.now())
     val selectedDate: StateFlow<LocalDate> = _selectedDate.asStateFlow()
 
-    private val _selectedHourIndex = MutableStateFlow(0)
+    private val _selectedHourIndex = MutableStateFlow(hourToShiChenIndex(LocalTime.now().hour))
     val selectedHourIndex: StateFlow<Int> = _selectedHourIndex.asStateFlow()
 
     private val _note = MutableStateFlow("")

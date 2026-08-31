@@ -3,7 +3,6 @@ package com.potuo.feipanqimen2.ui
 import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,19 +10,21 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -38,8 +39,25 @@ import com.potuo.feipanqimen2.ui.theme.QimenDimens
 import com.potuo.feipanqimen2.viewmodel.MainViewModel
 import java.time.Instant
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+
+private fun hourToShiChenIndex(hour: Int): Int = when (hour) {
+    23, 0 -> 0
+    1, 2 -> 1
+    3, 4 -> 2
+    5, 6 -> 3
+    7, 8 -> 4
+    9, 10 -> 5
+    11, 12 -> 6
+    13, 14 -> 7
+    15, 16 -> 8
+    17, 18 -> 9
+    19, 20 -> 10
+    21, 22 -> 11
+    else -> 0
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,6 +66,9 @@ fun InputScreen(viewModel: MainViewModel, onCalculate: () -> Unit) {
     val selectedHourIndex by viewModel.selectedHourIndex.collectAsState()
     val note by viewModel.note.collectAsState()
     var showDatePicker by remember { mutableStateOf(false) }
+    var showTimePicker by remember { mutableStateOf(false) }
+    var selectedHour by remember { mutableIntStateOf(LocalTime.now().hour) }
+    var selectedMinute by remember { mutableIntStateOf(LocalTime.now().minute) }
 
     // 真太阳时（据教材「抽时选局」：以卦师所在地地方时起卦）
     // 每次组合直接读设置，避免 remember 缓存旧经度（设置页改完后回输入页立即可见）
@@ -88,36 +109,25 @@ fun InputScreen(viewModel: MainViewModel, onCalculate: () -> Unit) {
         ) {
             Text(
                 selectedDate.format(DateTimeFormatter.ofPattern("yyyy年MM月dd日")),
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
             )
         }
 
-        Text(
-            "选择时辰",
-            style = MaterialTheme.typography.titleSmall,
+        QimenOutlinedButton(
+            onClick = { showTimePicker = true },
             modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center,
-        )
-        // 十二时辰：3 行 × 4 个
-        QimenConstants.HOUR_NAMES.chunked(4).forEach { rowNames ->
-            Row(
+        ) {
+            Text(
+                String.format(
+                    "%02d:%02d · %s",
+                    selectedHour,
+                    selectedMinute,
+                    QimenConstants.HOUR_NAMES[selectedHourIndex],
+                ),
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm),
-            ) {
-                rowNames.forEach { name ->
-                    val index = QimenConstants.HOUR_NAMES.indexOf(name)
-                    val selected = selectedHourIndex == index
-                    FilterChip(
-                        selected = selected,
-                        onClick = { viewModel.setHourIndex(index) },
-                        label = { Text(name) },
-                        modifier = Modifier.weight(1f),
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        ),
-                    )
-                }
-            }
+                textAlign = TextAlign.Center,
+            )
         }
 
         Text(
@@ -172,5 +182,30 @@ fun InputScreen(viewModel: MainViewModel, onCalculate: () -> Unit) {
         ) {
             DatePicker(state = state)
         }
+    }
+
+    if (showTimePicker) {
+        val timePickerState = rememberTimePickerState(
+            initialHour = selectedHour,
+            initialMinute = selectedMinute,
+            is24Hour = true,
+        )
+        AlertDialog(
+            onDismissRequest = { showTimePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    selectedHour = timePickerState.hour
+                    selectedMinute = timePickerState.minute
+                    viewModel.setHourIndex(hourToShiChenIndex(timePickerState.hour))
+                    showTimePicker = false
+                }) { Text("确定") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTimePicker = false }) { Text("取消") }
+            },
+            text = {
+                TimePicker(state = timePickerState)
+            },
+        )
     }
 }

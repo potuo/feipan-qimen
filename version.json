@@ -1,5 +1,5 @@
 {
-  "version": "2.6.13",
+  "version": "3.0.0",
   "apk_url": "https://gitee.com/potuo/feipan-qimen/releases/download/v2.6.13/app-debug.apk",
-  "notes": "案例反馈筛选 · 关于页头像与双平台链接 · 代码精简"
+  "notes": "时间选择器 · 默认当前时间 · 案例分享图片 · v3.0 大版本"
 }
