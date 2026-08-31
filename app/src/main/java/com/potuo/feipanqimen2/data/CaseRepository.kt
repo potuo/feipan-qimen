@@ -3,6 +3,7 @@ package com.potuo.feipanqimen2.data
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.google.gson.reflect.TypeToken
+import com.potuo.feipanqimen2.qimen.QimenPalaceEnhancer
 import com.potuo.feipanqimen2.qimen.QimenResult
 import kotlinx.coroutines.flow.Flow
 import java.time.Instant
@@ -19,6 +20,12 @@ data class ExportBundle(
 data class CategoryStat(
     val category: String,
     val count: Int,
+)
+
+/** 反馈状态统计：状态名 + 案例数 */
+data class FeedbackStat(
+    val f: String,
+    val c: Int,
 )
 
 /** 案例事项类别选项（保存/筛选/统计共用） */
@@ -42,9 +49,15 @@ class CaseRepository(private val dao: CaseDao) {
 
     fun categoryStats(): Flow<List<CategoryStat>> = dao.categoryStats()
 
+    fun feedbackStats(): Flow<List<FeedbackStat>> = dao.feedbackStats()
+
     fun serializePan(result: QimenResult): String = gson.toJson(result)
 
-    fun deserializePan(json: String): QimenResult = gson.fromJson(json, QimenResult::class.java)
+    /** 反序列化 + 老案例注解补全（早期版本缺地盘神/六亲/状态/角标字段） */
+    fun deserializePan(json: String): QimenResult {
+        val result = gson.fromJson(json, QimenResult::class.java)
+        return QimenPalaceEnhancer.enhance(result)
+    }
 
     fun exportCases(cases: List<CaseEntity>): String {
         val bundle = ExportBundle(

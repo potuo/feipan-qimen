@@ -96,4 +96,49 @@ class QimenPalaceEnhancerTest {
         assertEquals("旺", result.palaces[7]!!.state)
         assertEquals("休", result.palaces[9]!!.state)
     }
+
+    @Test
+    fun `老案例缺注解字段时 enhance 补全且与全新盘一致`() {
+        // 模拟 v2.6.8 之前存的旧格式：注解字段（地盘神/状态/六亲/角标）为空
+        val oldPalaces = result.palaces.mapValues { (_, info) ->
+            info.copy(
+                earthGod = "",
+                state = "",
+                liuQinStar = "",
+                liuQinHeaven = "",
+                liuQinGate = "",
+                liuQinEarth = "",
+                marks = emptyList(),
+            )
+        }
+        val oldResult = result.copy(palaces = oldPalaces)
+
+        val enhanced = QimenPalaceEnhancer.enhance(oldResult)
+
+        // 补全后与全新排盘结果逐字段一致
+        result.palaces.forEach { (p, fresh) ->
+            val got = enhanced.palaces[p]!!
+            assertEquals("$p earthGod", fresh.earthGod, got.earthGod)
+            assertEquals("$p state", fresh.state, got.state)
+            assertEquals("$p liuQinStar", fresh.liuQinStar, got.liuQinStar)
+            assertEquals("$p liuQinHeaven", fresh.liuQinHeaven, got.liuQinHeaven)
+            assertEquals("$p liuQinGate", fresh.liuQinGate, got.liuQinGate)
+            assertEquals("$p liuQinEarth", fresh.liuQinEarth, got.liuQinEarth)
+            assertEquals("$p marks", fresh.marks, got.marks)
+        }
+        // 核心排盘字段不受影响
+        assertEquals(result.siZhu, enhanced.siZhu)
+        assertEquals(result.zhiFuStar, enhanced.zhiFuStar)
+        assertEquals(result.zhiShiGate, enhanced.zhiShiGate)
+        assertEquals(result.kongWang, enhanced.kongWang)
+    }
+
+    @Test
+    fun `enhance 幂等且字段完整时原样返回`() {
+        val once = QimenPalaceEnhancer.enhance(result)
+        val twice = QimenPalaceEnhancer.enhance(once)
+        // 全新盘字段已完整 → enhance 不产生任何改动
+        assertEquals(result.palaces, once.palaces)
+        assertEquals(once.palaces, twice.palaces)
+    }
 }

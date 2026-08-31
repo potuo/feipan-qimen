@@ -83,4 +83,69 @@ object QimenPalaceEnhancer {
 
         return marks
     }
+
+    /**
+     * 地盘神：值符神从旬首遁仪地盘宫起布（神序同天盘神，阳顺阴逆）。
+     * @param xunShouEarthPalace 旬首遁仪落宫（地盘干 == 旬首遁干 的宫）
+     */
+    fun earthGodsOf(xunShouEarthPalace: Int?, yangDun: Boolean): Map<Int, String> {
+        if (xunShouEarthPalace == null) return emptyMap()
+        val gods = mutableMapOf<Int, String>()
+        val order = QimenConstants.GODS_ORDER
+        order.forEachIndexed { i, god ->
+            val palace = if (yangDun) ((xunShouEarthPalace - 1 + i) % 9) + 1
+            else ((xunShouEarthPalace - 1 - i).mod(9)) + 1
+            gods[palace] = god
+        }
+        return gods
+    }
+
+    /**
+     * 老案例补全：早期版本存的 panJson 缺 地盘神/状态/六亲/角标 字段，
+     * 反序列化后这些字段为空导致盘面 6 行布局缺行。此函数按现有排盘结果补算缺失注解。
+     * 纯函数：字段已完整时原样返回。
+     */
+    fun enhance(result: QimenResult): QimenResult {
+        val needsEnhance = result.palaces.values.any {
+            it.earthGod.isEmpty() || it.state.isEmpty() ||
+                it.liuQinStar.isEmpty() || it.liuQinGate.isEmpty()
+        }
+        if (!needsEnhance) return result
+
+        val hourStem = result.hourPillar.firstOrNull()?.toString() ?: ""
+        val monthElement = monthElementOf(result.jieQi)
+        val xunShouEarthPalace = result.palaces.entries
+            .firstOrNull { it.value.earthStem == result.xunShouStem }?.key
+        val yangDun = result.dunType == "阳遁"
+        val earthGods = earthGodsOf(xunShouEarthPalace, yangDun)
+
+        val newPalaces = result.palaces.mapValues { (p, info) ->
+            if (info.earthGod.isNotEmpty() && info.state.isNotEmpty() &&
+                info.liuQinStar.isNotEmpty() && info.liuQinGate.isNotEmpty()
+            ) {
+                info
+            } else {
+                info.copy(
+                    earthGod = info.earthGod.ifEmpty { earthGods[p] ?: "" },
+                    state = info.state.ifEmpty { wangShuaiState(info.heavenStem, monthElement) },
+                    liuQinStar = info.liuQinStar.ifEmpty {
+                        liuQinOf(QimenConstants.STAR_ELEMENT[info.star], hourStem)
+                    },
+                    liuQinHeaven = info.liuQinHeaven.ifEmpty {
+                        liuQinOf(QimenConstants.STEM_ELEMENT[info.heavenStem], hourStem)
+                    },
+                    liuQinGate = info.liuQinGate.ifEmpty {
+                        liuQinOf(QimenConstants.GATE_ELEMENT[info.gate], hourStem)
+                    },
+                    liuQinEarth = info.liuQinEarth.ifEmpty {
+                        liuQinOf(QimenConstants.STEM_ELEMENT[info.earthStem], hourStem)
+                    },
+                    marks = if (info.marks.isEmpty()) {
+                        buildMarks(p, info.gate, info.heavenStem, result.hourPillar)
+                    } else info.marks,
+                )
+            }
+        }
+        return result.copy(palaces = newPalaces)
+    }
 }

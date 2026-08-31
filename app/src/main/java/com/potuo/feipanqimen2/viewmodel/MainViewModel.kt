@@ -86,6 +86,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val categoryStats = repository.categoryStats()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val feedbackStats = repository.feedbackStats()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     fun setDate(date: LocalDate) { _selectedDate.value = date }
     fun setHourIndex(index: Int) { _selectedHourIndex.value = index }
     fun setNote(note: String) { _note.value = note }

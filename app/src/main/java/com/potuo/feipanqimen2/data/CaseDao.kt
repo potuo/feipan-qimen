@@ -37,7 +37,8 @@ interface CaseDao {
              tags LIKE '%' || :query || '%' OR
              note LIKE '%' || :query || '%' OR
              panDate LIKE '%' || :query || '%' OR
-             dunType LIKE '%' || :query || '%')
+             dunType LIKE '%' || :query || '%' OR
+             feedback LIKE '%' || :query || '%')
             AND (:category = '全部' OR category = :category)
             AND (:feedbackFilter = '全部'
                  OR (:feedbackFilter = '已反馈' AND feedback != '')
@@ -49,4 +50,12 @@ interface CaseDao {
 
     @Query("SELECT category, COUNT(*) AS count FROM cases GROUP BY category ORDER BY count DESC")
     fun categoryStats(): Flow<List<CategoryStat>>
+
+    @Query(
+        """
+        SELECT CASE WHEN feedback != '' THEN '已反馈' ELSE '未反馈' END AS f, COUNT(*) AS c
+        FROM cases GROUP BY f
+        """,
+    )
+    fun feedbackStats(): Flow<List<FeedbackStat>>
 }

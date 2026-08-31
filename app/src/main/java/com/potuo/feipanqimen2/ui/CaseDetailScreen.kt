@@ -104,7 +104,16 @@ fun CaseDetailScreen(
             IconButton(onClick = {
                 scope.launch(Dispatchers.IO) {
                     runCatching {
-                        val file = QimenShareImage.create(r, palette, File(context.cacheDir, "share"))
+                        val file = QimenShareImage.create(
+                            r,
+                            palette,
+                            File(context.cacheDir, "share"),
+                            QimenShareImage.CaseShareInfo(
+                                tags = c.tags,
+                                note = c.note,
+                                feedback = c.feedback,
+                            ),
+                        )
                         val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
                         val intent = Intent(Intent.ACTION_SEND).apply {
                             type = "image/png"

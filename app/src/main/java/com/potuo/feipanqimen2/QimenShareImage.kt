@@ -14,17 +14,31 @@ import java.io.FileOutputStream
 
 /**
  * 盘面分享图：把飞盘盘面绘制成一张 PNG 图片（跟随当前主题配色）。
- * 布局：标题（四柱/局数）→ 九宫盘面 → 底部（值符值使/空亡）。
+ * 布局：标题（四柱/局数）→ 九宫盘面 → 底部（值符值使/空亡 → 可选案例信息）。
  */
 object QimenShareImage {
 
     private const val WIDTH = 1080
 
-    fun create(result: QimenResult, palette: QimenPalette, dir: File): File {
+    /** 案例附加信息（分享案例盘面时携带：标签/备注/反馈结果） */
+    data class CaseShareInfo(
+        val tags: String = "",
+        val note: String = "",
+        val feedback: String = "",
+    )
+
+    fun create(result: QimenResult, palette: QimenPalette, dir: File, extra: CaseShareInfo? = null): File {
         val boardSize = 900
         val titleH = 260
         val footerH = 180
-        val height = titleH + boardSize + footerH
+        // 案例信息区（仅在有内容时占用高度）
+        val extraLines = buildList {
+            if (!extra?.tags.isNullOrBlank()) add("标签：${extra!!.tags}")
+            if (!extra?.note.isNullOrBlank()) add("备注：${extra!!.note}")
+            if (!extra?.feedback.isNullOrBlank()) add("反馈：${extra!!.feedback}")
+        }
+        val extraH = if (extraLines.isEmpty()) 0 else 50 + extraLines.size * 58 + 30
+        val height = titleH + boardSize + footerH + extraH
 
         val bitmap = Bitmap.createBitmap(WIDTH, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
@@ -177,6 +191,45 @@ object QimenShareImage {
             cellText,
         )
         canvas.drawText("空亡：${result.kongWang}", WIDTH / 2f, footerY + 60f, goldPaint)
+
+        // ── 案例信息区（标签/备注/反馈，有内容才绘制）──
+        if (extraLines.isNotEmpty()) {
+            val infoTop = footerY + 120f
+            val linePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = palette.inkText.toArgb()
+                textSize = 32f
+                textAlign = Paint.Align.LEFT
+            }
+            val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = palette.cinnabar.toArgb()
+                textSize = 32f
+                typeface = Typeface.DEFAULT_BOLD
+                textAlign = Paint.Align.LEFT
+            }
+            // 分隔线
+            val dividerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.STROKE
+                strokeWidth = 2f
+                color = palette.gridBorder.toArgb()
+            }
+            canvas.drawLine(80f, infoTop - 30f, WIDTH - 80f, infoTop - 30f, dividerPaint)
+
+            extraLines.forEachIndexed { i, line ->
+                val y = infoTop + i * 58f
+                val (label, content) = if (line.contains("：")) {
+                    line.substringBefore("：") to line.substringAfter("：")
+                } else {
+                    "" to line
+                }
+                if (label.isNotEmpty()) canvas.drawText("$label：", 80f, y, labelPaint)
+                canvas.drawText(
+                    content,
+                    80f + (if (label.isNotEmpty()) labelPaint.measureText("$label：") else 0f),
+                    y,
+                    linePaint,
+                )
+            }
+        }
 
         // ── 保存 ──
         dir.mkdirs()

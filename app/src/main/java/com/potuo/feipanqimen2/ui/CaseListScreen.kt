@@ -52,7 +52,12 @@ fun CaseListScreen(
     val categoryFilter by viewModel.categoryFilter.collectAsState()
     val feedbackFilter by viewModel.feedbackFilter.collectAsState()
     val categoryStats by viewModel.categoryStats.collectAsState()
+    val feedbackStats by viewModel.feedbackStats.collectAsState()
     val dateFormat = SimpleDateFormat("MM-dd HH:mm", Locale.CHINA)
+
+    val feedbackedCount = feedbackStats.find { it.f == "已反馈" }?.c ?: 0
+    val notFeedbackedCount = feedbackStats.find { it.f == "未反馈" }?.c ?: 0
+    val totalFeedbackCount = feedbackedCount + notFeedbackedCount
 
     Column(
         modifier = Modifier
@@ -94,10 +99,16 @@ fun CaseListScreen(
                 modifier = Modifier.padding(top = QimenDimens.spacingXs),
             ) {
                 listOf("全部", "已反馈", "未反馈").forEach { f ->
+                    val label = when (f) {
+                        "全部" -> "全部 $totalFeedbackCount"
+                        "已反馈" -> "已反馈 $feedbackedCount"
+                        "未反馈" -> "未反馈 $notFeedbackedCount"
+                        else -> f
+                    }
                     FilterChip(
                         selected = feedbackFilter == f,
                         onClick = { viewModel.setFeedbackFilter(f) },
-                        label = { Text(f) },
+                        label = { Text(label) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                             selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -117,11 +128,23 @@ fun CaseListScreen(
             }
 
             if (cases.isEmpty()) {
-                EmptyState(
-                    message = "暂无案例，去排一盘吧",
-                    actionLabel = "去起盘",
-                    onAction = onGoToPan,
-                )
+                if (categoryStats.isEmpty()) {
+                    EmptyState(
+                        message = "暂无案例，去排一盘吧",
+                        actionLabel = "去起盘",
+                        onAction = onGoToPan,
+                    )
+                } else {
+                    EmptyState(
+                        message = "没有符合当前筛选条件的案例",
+                        actionLabel = "清除筛选",
+                        onAction = {
+                            viewModel.setSearchQuery("")
+                            viewModel.setCategoryFilter("全部")
+                            viewModel.setFeedbackFilter("全部")
+                        },
+                    )
+                }
             } else {
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
