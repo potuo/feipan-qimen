@@ -40,7 +40,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.potuo.feipanqimen2.ChangelogEntry
+import com.potuo.feipanqimen2.NoticeInfo
 import com.potuo.feipanqimen2.UpdateChecker
 import com.potuo.feipanqimen2.UpdateInfo
 import com.potuo.feipanqimen2.log.LogManager
@@ -77,6 +79,9 @@ fun AboutScreen() {
     var changelog by remember { mutableStateOf<List<ChangelogEntry>?>(null) }
     var changelogLoading by remember { mutableStateOf(true) }
     var changelogFailed by remember { mutableStateOf(false) }
+
+    // ── 系统公告状态（Gitee 拉取，无公告不显示）──
+    var notice by remember { mutableStateOf<NoticeInfo?>(null) }
 
     val exportLogLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("text/plain"),
@@ -132,7 +137,7 @@ fun AboutScreen() {
         }
     }
 
-    // 进入页面即拉取更新日志
+    // 进入页面即拉取更新日志 + 系统公告
     LaunchedEffect(Unit) {
         changelog = UpdateChecker.loadChangelogCache(context)
         val fresh = UpdateChecker.fetchChangelog()
@@ -144,6 +149,7 @@ fun AboutScreen() {
             changelogFailed = true
         }
         changelogLoading = false
+        notice = UpdateChecker.fetchNotice()
     }
 
     // 只显示当前版本及更早版本的更新日志（如当前 v2.6，看不到 v2.6.2 的日志）
@@ -202,6 +208,25 @@ fun AboutScreen() {
                 }
                 HorizontalDivider(modifier = Modifier.padding(vertical = QimenDimens.spacingMd))
                 Text("MIT License", style = MaterialTheme.typography.bodySmall)
+            }
+        }
+
+        // ── 系统公告（Gitee 拉取；无公告不显示）──
+        notice?.let { n ->
+            CollapsibleSection(title = "系统公告", defaultExpanded = true) {
+                Text(
+                    n.text,
+                    style = MaterialTheme.typography.bodyMedium,
+                    lineHeight = 22.sp,
+                )
+                n.date?.let { d ->
+                    Spacer(modifier = Modifier.height(QimenDimens.spacingXs))
+                    Text(
+                        "发布于 $d",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
 

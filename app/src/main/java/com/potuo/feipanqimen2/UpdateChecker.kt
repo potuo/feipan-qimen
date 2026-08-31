@@ -27,6 +27,12 @@ data class ChangelogEntry(
     val items: List<String>,
 )
 
+/** 系统公告（联网拉取自仓库 notice.json） */
+data class NoticeInfo(
+    val text: String,
+    val date: String? = null,
+)
+
 /**
  * 无服务器检测更新：GitHub Releases API 为主，jsDelivr / raw 静态 version.json 兜底。
  * 客户端只需拿远程最新版本号与本地比对，需要时下载 APK 安装。
@@ -34,16 +40,14 @@ data class ChangelogEntry(
 object UpdateChecker {
 
     private const val REPO = "potuo/feipan-qimen"
+    private const val GITEE_RAW = "https://gitee.com/$REPO/raw/master"
     private const val GITHUB_API = "https://api.github.com/repos/$REPO/releases/latest"
     private const val JS_DELIVR = "https://cdn.jsdelivr.net/gh/$REPO@master/version.json"
-    private const val RAW_GITHUB = "https://raw.githubusercontent.com/$REPO/master/version.json"
+    private const val RAW_GITHUB_BASE = "https://raw.githubusercontent.com/$REPO/master"
+    private const val RAW_GITHUB = "$RAW_GITHUB_BASE/version.json"
     private const val JS_DELIVR_CHANGELOG = "https://cdn.jsdelivr.net/gh/$REPO@master/changelog.json"
-    private const val RAW_CHANGELOG = "https://raw.githubusercontent.com/$REPO/master/changelog.json"
+    private const val RAW_CHANGELOG = "$RAW_GITHUB_BASE/changelog.json"
     private const val CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000L
-
-    // ── 国内源（腾讯云 COS，主源）──
-    private const val COS_BASE = "https://tianqin-feipan-qimen-1309309686.cos.ap-shanghai.myqcloud.com"
-    private val COS_ENABLED = !COS_BASE.contains("PLACEHOLDER")
 
     /** 版本比较：a > b 返回正数，a < b 返回负数，相等返回 0。语义化分段比较，v 前缀忽略。 */
     fun compareVersions(a: String, b: String): Int {
@@ -67,9 +71,9 @@ object UpdateChecker {
             .edit().putLong("last_update_check", System.currentTimeMillis()).apply()
     }
 
-    /** 检查最新版本：COS（国内）→ GitHub API → jsDelivr → raw，全部失败返回 null（调用方静默处理） */
+    /** 检查最新版本：Gitee（国内主）→ GitHub API → jsDelivr → raw，全部失败返回 null（调用方静默处理） */
     suspend fun checkLatest(): UpdateInfo? = withContext(Dispatchers.IO) {
-        if (COS_ENABLED) fetchVersionFile("$COS_BASE/version.json") else null
+        fetchVersionFile("$GITEE_RAW/version.json")
             ?: fetchGitHubApi()
             ?: fetchVersionFile(JS_DELIVR)
             ?: fetchVersionFile(RAW_GITHUB)
@@ -116,9 +120,9 @@ object UpdateChecker {
         }.getOrNull()
     }
 
-    /** 拉取更新日志（COS 主，jsDelivr/raw 兜底），失败返回 null（调用方可回退本地缓存） */
+    /** 拉取更新日志（Gitee 主，jsDelivr/raw 兜底），失败返回 null（调用方可回退本地缓存） */
     suspend fun fetchChangelog(): List<ChangelogEntry>? = withContext(Dispatchers.IO) {
-        if (COS_ENABLED) fetchChangelogFrom("$COS_BASE/changelog.json") else null
+        fetchChangelogFrom("$GITEE_RAW/changelog.json")
             ?: fetchChangelogFrom(JS_DELIVR_CHANGELOG)
             ?: fetchChangelogFrom(RAW_CHANGELOG)
     }
@@ -145,6 +149,24 @@ object UpdateChecker {
                     )
                 }
             }
+        }.getOrNull()
+    }
+
+    /** 拉取系统公告（Gitee 主，GitHub raw 兜底）；无公告或失败返回 null */
+    suspend fun fetchNotice(): NoticeInfo? = withContext(Dispatchers.IO) {
+        fetchNoticeFrom("$GITEE_RAW/notice.json") ?: fetchNoticeFrom("$RAW_GITHUB_BASE/notice.json")
+    }
+
+    private fun fetchNoticeFrom(url: String): NoticeInfo? {
+        return runCatching {
+            val conn = URL(url).openConnection() as HttpURLConnection
+            conn.connectTimeout = 8000
+            conn.readTimeout = 8000
+            conn.setRequestProperty("User-Agent", "feipan-qimen")
+            if (conn.responseCode != 200) return null
+            val json = JSONObject(conn.inputStream.bufferedReader().use { it.readText() })
+            val text = json.optString("text").takeIf { it.isNotBlank() } ?: return null
+            NoticeInfo(text, json.optString("date").takeIf { it.isNotBlank() })
         }.getOrNull()
     }
 
