@@ -1,5 +1,5 @@
 {
-  "version": "2.6.11",
-  "apk_url": "https://gitee.com/potuo/feipan-qimen/releases/download/v2.6.11/app-debug.apk",
-  "notes": "新增青玉主题配色 · 学习栏目教材重排（附原图）"
+  "version": "2.6.12",
+  "apk_url": "https://gitee.com/potuo/feipan-qimen/releases/download/v2.6.12/app-debug.apk",
+  "notes": "学习栏目目录/搜索/位置记忆 · 格局点按看教材原文 · 案例反馈标签"
 }
