@@ -20,6 +20,8 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SecondaryTabRow
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -57,7 +59,6 @@ fun CaseListScreen(
 
     val feedbackedCount = feedbackStats.find { it.f == "已反馈" }?.c ?: 0
     val notFeedbackedCount = feedbackStats.find { it.f == "未反馈" }?.c ?: 0
-    val totalFeedbackCount = feedbackedCount + notFeedbackedCount
 
     Column(
         modifier = Modifier
@@ -74,7 +75,25 @@ fun CaseListScreen(
                 singleLine = true,
             )
 
-            // 类别筛选
+            // 反馈状态 Tab（已反馈 / 未反馈）
+            val feedbackTabIndex = if (feedbackFilter == "已反馈") 0 else 1
+            SecondaryTabRow(
+                selectedTabIndex = feedbackTabIndex,
+                modifier = Modifier.padding(vertical = QimenDimens.spacingXs),
+            ) {
+                Tab(
+                    selected = feedbackTabIndex == 0,
+                    onClick = { viewModel.setFeedbackFilter("已反馈") },
+                    text = { Text("已反馈 $feedbackedCount") },
+                )
+                Tab(
+                    selected = feedbackTabIndex == 1,
+                    onClick = { viewModel.setFeedbackFilter("未反馈") },
+                    text = { Text("未反馈 $notFeedbackedCount") },
+                )
+            }
+
+            // 类别细分（类目项）
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm),
                 verticalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm),
@@ -84,31 +103,6 @@ fun CaseListScreen(
                         selected = categoryFilter == c,
                         onClick = { viewModel.setCategoryFilter(c) },
                         label = { Text(c) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        ),
-                    )
-                }
-            }
-
-            // 反馈状态筛选
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm),
-                verticalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm),
-                modifier = Modifier.padding(top = QimenDimens.spacingXs),
-            ) {
-                listOf("全部", "已反馈", "未反馈").forEach { f ->
-                    val label = when (f) {
-                        "全部" -> "全部 $totalFeedbackCount"
-                        "已反馈" -> "已反馈 $feedbackedCount"
-                        "未反馈" -> "未反馈 $notFeedbackedCount"
-                        else -> f
-                    }
-                    FilterChip(
-                        selected = feedbackFilter == f,
-                        onClick = { viewModel.setFeedbackFilter(f) },
-                        label = { Text(label) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                             selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,

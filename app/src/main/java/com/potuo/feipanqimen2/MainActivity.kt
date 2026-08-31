@@ -7,7 +7,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -40,7 +46,6 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -93,7 +98,7 @@ import com.potuo.feipanqimen2.ui.LearnScreen
 import com.potuo.feipanqimen2.ui.ResultScreen
 import com.potuo.feipanqimen2.ui.SettingsScreen
 import com.potuo.feipanqimen2.ui.components.QimenButton
-import com.potuo.feipanqimen2.ui.components.QimenOutlinedButton
+import com.potuo.feipanqimen2.ui.components.QimenDialog
 import com.potuo.feipanqimen2.ui.theme.FeipanQimenTheme
 import com.potuo.feipanqimen2.ui.theme.LocalQimenPalette
 import com.potuo.feipanqimen2.viewmodel.MainViewModel
@@ -204,7 +209,10 @@ fun MainApp(
         if (UpdateChecker.shouldAutoCheck(context)) {
             val info = UpdateChecker.checkLatest(localVer)
             UpdateChecker.markChecked(context)
-            if (info != null && UpdateChecker.compareVersions(info.version, localVer) > 0) {
+            val ignored = appPrefs.getString("ignored_update_version", null)
+            if (info != null &&
+                UpdateChecker.compareVersions(info.version, localVer) > 0 &&
+                (ignored == null || UpdateChecker.compareVersions(info.version, ignored) > 0)) {
                 updateInfo = info
             }
         }
@@ -366,37 +374,46 @@ fun MainApp(
             },
         ) { padding ->
             Box(modifier = Modifier.padding(padding)) {
-                when {
-                    inDetail -> CaseDetailScreen(
-                        viewModel = viewModel,
-                        caseId = detailCaseId!!,
-                        onBack = { detailCaseId = null },
-                    )
-                    section == Section.PAN && showResult -> ResultScreen(
-                        viewModel = viewModel,
-                        onBack = { showResult = false },
-                    )
-                    section == Section.PAN -> InputScreen(
-                        viewModel = viewModel,
-                        onCalculate = { showResult = true },
-                    )
-                    section == Section.CASES -> CaseListScreen(
-                        viewModel = viewModel,
-                        onCaseClick = { detailCaseId = it },
-                        onGoToPan = {
-                            section = Section.PAN
-                            showResult = false
-                        },
-                    )
-                    section == Section.HUANGLI -> HuangLiScreen()
-                    section == Section.LEARN -> LearnScreen()
-                    section == Section.ABOUT -> AboutScreen()
-                    else -> SettingsScreen(
-                        viewModel = viewModel,
-                        isDark = isDark,
-                        themeName = themeName,
-                        onSelectTheme = onSelectTheme,
-                    )
+                AnimatedContent(
+                    targetState = NavTarget(section, showResult, detailCaseId),
+                    transitionSpec = {
+                        (fadeIn(tween(220)) + slideInHorizontally(tween(240)) { it / 14 })
+                            .togetherWith(fadeOut(tween(160)) + slideOutHorizontally(tween(160)) { -it / 14 })
+                    },
+                    label = "screenTransition",
+                ) { target ->
+                    when {
+                        target.detailCaseId != null -> CaseDetailScreen(
+                            viewModel = viewModel,
+                            caseId = target.detailCaseId!!,
+                            onBack = { detailCaseId = null },
+                        )
+                        target.section == Section.PAN && target.showResult -> ResultScreen(
+                            viewModel = viewModel,
+                            onBack = { showResult = false },
+                        )
+                        target.section == Section.PAN -> InputScreen(
+                            viewModel = viewModel,
+                            onCalculate = { showResult = true },
+                        )
+                        target.section == Section.CASES -> CaseListScreen(
+                            viewModel = viewModel,
+                            onCaseClick = { detailCaseId = it },
+                            onGoToPan = {
+                                section = Section.PAN
+                                showResult = false
+                            },
+                        )
+                        target.section == Section.HUANGLI -> HuangLiScreen()
+                        target.section == Section.LEARN -> LearnScreen()
+                        target.section == Section.ABOUT -> AboutScreen()
+                        else -> SettingsScreen(
+                            viewModel = viewModel,
+                            isDark = isDark,
+                            themeName = themeName,
+                            onSelectTheme = onSelectTheme,
+                        )
+                    }
                 }
             }
         }
@@ -406,9 +423,15 @@ fun MainApp(
         val currentEntry = state.entries.firstOrNull {
             UpdateChecker.compareVersions(it.version, state.version) == 0
         }
-        AlertDialog(
+        QimenDialog(
             onDismissRequest = {},
-            title = { Text("更新日志 · v${state.version}") },
+            title = "更新日志 · v${state.version}",
+            confirmText = "知道了",
+            onConfirm = {
+                appPrefs.edit().putString("last_seen_version", state.version).apply()
+                changelogDialog = null
+            },
+            dismissText = null,
             text = {
                 Column {
                     if (currentEntry != null) {
@@ -429,22 +452,40 @@ fun MainApp(
                     }
                 }
             },
-            confirmButton = {
-                QimenButton(
-                    onClick = {
-                        appPrefs.edit().putString("last_seen_version", state.version).apply()
-                        changelogDialog = null
-                    },
-                    modifier = Modifier.padding(end = 8.dp),
-                ) { Text("知道了") }
-            },
         )
     }
 
     updateInfo?.let { info ->
-        AlertDialog(
+        QimenDialog(
             onDismissRequest = { if (!downloading) updateInfo = null },
-            title = { Text("发现新版本 v${info.version}") },
+            title = "发现新版本 v${info.version}",
+            confirmText = if (downloading) "下载中…" else "更新",
+            onConfirm = {
+                if (downloading) return@QimenDialog
+                scope.launch {
+                    downloading = true
+                    downloadProgress = 0f
+                    val apkFile = File(context.cacheDir, "update.apk")
+                    val ok = UpdateChecker.downloadApk(info.apkUrl, apkFile) { p ->
+                        scope.launch { downloadProgress = p }
+                    }
+                    downloading = false
+                    if (ok) {
+                        UpdateChecker.installApk(context, apkFile)
+                        updateInfo = null
+                    } else {
+                        Toast.makeText(context, "下载失败，请稍后重试", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            },
+            confirmEnabled = !downloading,
+            dismissText = "取消",
+            onDismiss = { if (!downloading) updateInfo = null },
+            neutralText = "不再提醒",
+            onNeutral = {
+                appPrefs.edit().putString("ignored_update_version", info.version).apply()
+                updateInfo = null
+            },
             text = {
                 Column {
                     Text(
@@ -461,35 +502,6 @@ fun MainApp(
                     }
                 }
             },
-            confirmButton = {
-                QimenButton(
-                    onClick = {
-                        if (downloading) return@QimenButton
-                        scope.launch {
-                            downloading = true
-                            downloadProgress = 0f
-                            val apkFile = File(context.cacheDir, "update.apk")
-                            val ok = UpdateChecker.downloadApk(info.apkUrl, apkFile) { p ->
-                                scope.launch { downloadProgress = p }
-                            }
-                            downloading = false
-                            if (ok) {
-                                UpdateChecker.installApk(context, apkFile)
-                                updateInfo = null
-                            } else {
-                                Toast.makeText(context, "下载失败，请稍后重试", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    },
-                    enabled = !downloading,
-                    modifier = Modifier.padding(end = 8.dp),
-                ) { Text(if (downloading) "下载中…" else "立即更新") }
-            },
-            dismissButton = {
-                QimenOutlinedButton(
-                    onClick = { if (!downloading) updateInfo = null },
-                ) { Text("稍后") }
-            },
         )
     }
 }
@@ -497,6 +509,13 @@ fun MainApp(
 private data class ChangelogDialogState(
     val version: String,
     val entries: List<ChangelogEntry>,
+)
+
+/** 导航目标（供 AnimatedContent 转场比较） */
+private data class NavTarget(
+    val section: Section,
+    val showResult: Boolean,
+    val detailCaseId: Long?,
 )
 
 /** 启动动画：罗盘金环旋转 + 标题浮现（跟随主题配色与明暗） */

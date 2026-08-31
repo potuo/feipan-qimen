@@ -16,14 +16,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -42,7 +40,9 @@ import com.potuo.feipanqimen2.data.CaseEntity
 import com.potuo.feipanqimen2.qimen.QimenConstants
 import com.potuo.feipanqimen2.ui.components.HuangLiCard
 import com.potuo.feipanqimen2.ui.components.QimenBoard
+import com.potuo.feipanqimen2.ui.components.PalaceDetailDialog
 import com.potuo.feipanqimen2.ui.components.QimenButton
+import com.potuo.feipanqimen2.ui.components.QimenDialog
 import com.potuo.feipanqimen2.ui.theme.LocalQimenPalette
 import com.potuo.feipanqimen2.ui.theme.QimenDimens
 import com.potuo.feipanqimen2.viewmodel.MainViewModel
@@ -63,6 +63,7 @@ fun CaseDetailScreen(
     var feedback by remember { mutableStateOf("") }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var huangLiExpanded by remember { mutableStateOf(false) }
+    var selectedPalace by remember { mutableStateOf<Int?>(null) }
     val result by viewModel.qimenResult.collectAsState()
 
     BackHandler(onBack = onBack)
@@ -163,7 +164,7 @@ fun CaseDetailScreen(
             Text("值符：${r.zhiFuStar}落${QimenConstants.PALACE_NAMES[r.zhiFuPalace]}宫")
             Text("值使：${r.zhiShiGate}门落${QimenConstants.PALACE_NAMES[r.zhiShiPalace]}宫")
 
-            QimenBoard(result = r, animate = false)
+            QimenBoard(result = r, animate = false, onPalaceClick = { selectedPalace = it })
 
             if (c.huangLi.isNotBlank()) {
                 HuangLiCard(
@@ -201,20 +202,28 @@ fun CaseDetailScreen(
     }
 
     if (showDeleteDialog) {
-        AlertDialog(
+        QimenDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("确认删除") },
+            title = "确认删除",
+            destructive = true,
+            confirmText = "删除",
+            onConfirm = {
+                case?.let { viewModel.deleteCase(it) }
+                showDeleteDialog = false
+                onBack()
+            },
+            dismissText = "取消",
+            onDismiss = { showDeleteDialog = false },
             text = { Text("删除后不可恢复，确定删除此案例？") },
-            confirmButton = {
-                TextButton(onClick = {
-                    case?.let { viewModel.deleteCase(it) }
-                    showDeleteDialog = false
-                    onBack()
-                }) { Text("删除", color = MaterialTheme.colorScheme.error) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) { Text("取消") }
-            },
+        )
+    }
+
+    // ── 宫格详解 ──
+    selectedPalace?.let { palaceNum ->
+        PalaceDetailDialog(
+            result = r,
+            palaceNum = palaceNum,
+            onDismiss = { selectedPalace = null },
         )
     }
 }

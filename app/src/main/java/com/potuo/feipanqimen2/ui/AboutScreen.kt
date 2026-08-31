@@ -23,16 +23,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -62,8 +58,9 @@ import com.potuo.feipanqimen2.UpdateInfo
 import com.potuo.feipanqimen2.log.LogManager
 import com.potuo.feipanqimen2.ui.components.CollapsibleSection
 import com.potuo.feipanqimen2.ui.components.QimenButton
+import com.potuo.feipanqimen2.ui.components.QimenCard
+import com.potuo.feipanqimen2.ui.components.QimenDialog
 import com.potuo.feipanqimen2.ui.components.QimenOutlinedButton
-import com.potuo.feipanqimen2.ui.theme.CardShape
 import com.potuo.feipanqimen2.ui.theme.QimenDimens
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -182,12 +179,10 @@ fun AboutScreen() {
         verticalArrangement = Arrangement.spacedBy(QimenDimens.spacingMd),
     ) {
         // ── 应用信息 ──
-        Card(
-            shape = CardShape,
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        QimenCard(
+            accentBar = true,
+            containerColor = MaterialTheme.colorScheme.surface,
         ) {
-            Column(modifier = Modifier.padding(QimenDimens.spacingLg)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     GithubAvatar(
                         url = "https://avatars.githubusercontent.com/potuo?s=120",
@@ -268,7 +263,6 @@ fun AboutScreen() {
                 }
                 HorizontalDivider(modifier = Modifier.padding(vertical = QimenDimens.spacingMd))
                 Text("MIT License", style = MaterialTheme.typography.bodySmall)
-            }
         }
 
         // ── 系统公告（Gitee 拉取；无公告不显示）──
@@ -401,9 +395,16 @@ fun AboutScreen() {
     }
 
     pendingUpdate?.let { info ->
-        AlertDialog(
+        QimenDialog(
             onDismissRequest = { pendingUpdate = null },
-            title = { Text("发现新版本 v${info.version}") },
+            title = "发现新版本 v${info.version}",
+            confirmText = "下载并安装",
+            onConfirm = {
+                pendingUpdate = null
+                downloadAndInstall(info)
+            },
+            dismissText = "以后再说",
+            onDismiss = { pendingUpdate = null },
             text = {
                 Column {
                     info.notes?.let {
@@ -421,17 +422,6 @@ fun AboutScreen() {
                         modifier = Modifier.padding(top = 6.dp),
                     )
                 }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        pendingUpdate = null
-                        downloadAndInstall(info)
-                    },
-                ) { Text("下载并安装") }
-            },
-            dismissButton = {
-                TextButton(onClick = { pendingUpdate = null }) { Text("以后再说") }
             },
         )
     }

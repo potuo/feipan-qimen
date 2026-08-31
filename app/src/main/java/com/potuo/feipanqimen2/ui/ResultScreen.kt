@@ -17,9 +17,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -27,7 +24,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -50,11 +46,13 @@ import com.potuo.feipanqimen2.qimen.PatternInfo
 import com.potuo.feipanqimen2.qimen.QimenConstants
 import com.potuo.feipanqimen2.qimen.QimenPatternDetector
 import com.potuo.feipanqimen2.ui.components.HuangLiCard
+import com.potuo.feipanqimen2.ui.components.PalaceDetailDialog
 import com.potuo.feipanqimen2.ui.components.QimenBoard
 import com.potuo.feipanqimen2.ui.components.QimenButton
+import com.potuo.feipanqimen2.ui.components.QimenCard
+import com.potuo.feipanqimen2.ui.components.QimenDialog
 import com.potuo.feipanqimen2.ui.components.QimenOutlinedButton
 import com.potuo.feipanqimen2.ui.components.SealBadge
-import com.potuo.feipanqimen2.ui.theme.CardShape
 import com.potuo.feipanqimen2.ui.theme.LocalQimenPalette
 import com.potuo.feipanqimen2.ui.theme.QimenDimens
 import com.potuo.feipanqimen2.viewmodel.MainViewModel
@@ -71,6 +69,7 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
     val category by viewModel.selectedCategory.collectAsState()
     var huangLiExpanded by remember { mutableStateOf(false) }
     var patternDetail by remember { mutableStateOf<PatternInfo?>(null) }
+    var selectedPalace by remember { mutableStateOf<Int?>(null) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val palette = LocalQimenPalette.current
@@ -92,101 +91,91 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
             .padding(QimenDimens.spacingLg),
         verticalArrangement = Arrangement.spacedBy(QimenDimens.spacingMd),
     ) {
-        Card(
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-            shape = CardShape,
-        ) {
-            Column(modifier = Modifier.padding(QimenDimens.spacingLg)) {
+        QimenCard(accentBar = true) {
+            Text(
+                r.siZhu,
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+            )
+            Spacer(modifier = Modifier.height(QimenDimens.spacingXs))
+            Text(
+                "${r.jieQi} · ${r.yuan} · ${r.dunType}${r.juNumber}局",
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                "旬首：${r.xunShou}（遁${r.xunShouStem}）· 空亡：${r.kongWang}",
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+            )
+            Spacer(modifier = Modifier.height(QimenDimens.spacingSm))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                SealBadge(text = "符")
                 Text(
-                    r.siZhu,
+                    "${r.zhiFuStar}·${QimenConstants.PALACE_NAMES[r.zhiFuPalace]}${r.zhiFuPalace}宫",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(start = QimenDimens.spacingXs),
+                )
+                Spacer(modifier = Modifier.width(QimenDimens.spacingLg))
+                SealBadge(text = "使")
+                Text(
+                    "${r.zhiShiGate}门·${QimenConstants.PALACE_NAMES[r.zhiShiPalace]}${r.zhiShiPalace}宫",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(start = QimenDimens.spacingXs),
+                )
+            }
+        }
+
+        QimenBoard(result = r, animate = true, onPalaceClick = { selectedPalace = it })
+
+        // ── 格局（据《奇门基础资料 2023版教》第三卷）──
+        if (patterns.isNotEmpty()) {
+            QimenCard(accentBar = true) {
+                Text(
+                    "格局",
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center,
                 )
-                Spacer(modifier = Modifier.height(QimenDimens.spacingXs))
-                Text(
-                    "${r.jieQi} · ${r.yuan} · ${r.dunType}${r.juNumber}局",
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center,
-                )
-                Text(
-                    "旬首：${r.xunShou}（遁${r.xunShouStem}）· 空亡：${r.kongWang}",
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center,
-                )
-                Spacer(modifier = Modifier.height(QimenDimens.spacingSm))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    SealBadge(text = "符")
-                    Text(
-                        "${r.zhiFuStar}·${QimenConstants.PALACE_NAMES[r.zhiFuPalace]}${r.zhiFuPalace}宫",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(start = QimenDimens.spacingXs),
-                    )
-                    Spacer(modifier = Modifier.width(QimenDimens.spacingLg))
-                    SealBadge(text = "使")
-                    Text(
-                        "${r.zhiShiGate}门·${QimenConstants.PALACE_NAMES[r.zhiShiPalace]}${r.zhiShiPalace}宫",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(start = QimenDimens.spacingXs),
-                    )
-                }
-            }
-        }
-
-        QimenBoard(result = r, animate = true)
-
-        // ── 格局（据《奇门基础资料 2023版教》第三卷）──
-        if (patterns.isNotEmpty()) {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                shape = CardShape,
-            ) {
-                Column(modifier = Modifier.padding(QimenDimens.spacingLg)) {
-                    Text(
-                        "格局",
-                        fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center,
-                    )
-                    Spacer(modifier = Modifier.height(QimenDimens.spacingMd))
-                    patterns.forEach { p ->
-                        Column(
-                            modifier = Modifier
-                                .padding(bottom = QimenDimens.spacingMd)
-                                .clickable { patternDetail = p },
-                        ) {
-                            Text(
-                                p.name,
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.SemiBold,
-                                color = when (p.isAuspicious) {
-                                    true -> MaterialTheme.colorScheme.primary
-                                    false -> MaterialTheme.colorScheme.error
-                                    null -> MaterialTheme.colorScheme.onSurfaceVariant
-                                },
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                p.detail,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                lineHeight = 22.sp,
-                            )
-                            Text(
-                                "📖 点按查看教材原文",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
-                                modifier = Modifier.padding(top = 2.dp),
-                            )
-                        }
+                Spacer(modifier = Modifier.height(QimenDimens.spacingMd))
+                patterns.forEach { p ->
+                    Column(
+                        modifier = Modifier
+                            .padding(bottom = QimenDimens.spacingMd)
+                            .clickable { patternDetail = p },
+                    ) {
+                        Text(
+                            p.name,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = when (p.isAuspicious) {
+                                true -> MaterialTheme.colorScheme.primary
+                                false -> MaterialTheme.colorScheme.error
+                                null -> MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            p.detail,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            lineHeight = 22.sp,
+                        )
+                        Text(
+                            "📖 点按查看教材原文",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
                     }
                 }
             }
@@ -269,24 +258,19 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
     // ── 格局详情：点按弹出教材原文 ──
     patternDetail?.let { p ->
         val bookText = remember(p.name) { PatternBook.lookup(context, p.name) }
-        AlertDialog(
+        QimenDialog(
             onDismissRequest = { patternDetail = null },
-            title = {
-                Text(
-                    p.name,
-                    color = when (p.isAuspicious) {
-                        true -> MaterialTheme.colorScheme.primary
-                        false -> MaterialTheme.colorScheme.error
-                        null -> MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                )
+            title = p.name,
+            accentColor = when (p.isAuspicious) {
+                true -> MaterialTheme.colorScheme.primary
+                false -> MaterialTheme.colorScheme.error
+                null -> palette.cinnabar
             },
+            confirmText = "知道了",
+            onConfirm = { patternDetail = null },
+            dismissText = null,
             text = {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState()),
-                ) {
+                Column {
                     Text(
                         p.detail,
                         style = MaterialTheme.typography.bodySmall,
@@ -308,9 +292,15 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                     )
                 }
             },
-            confirmButton = {
-                TextButton(onClick = { patternDetail = null }) { Text("知道了") }
-            },
+        )
+    }
+
+    // ── 宫格详解：点按宫格弹出星门神释义 ──
+    selectedPalace?.let { palaceNum ->
+        PalaceDetailDialog(
+            result = r,
+            palaceNum = palaceNum,
+            onDismiss = { selectedPalace = null },
         )
     }
 }

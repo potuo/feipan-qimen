@@ -72,7 +72,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _categoryFilter = MutableStateFlow("全部")
     val categoryFilter: StateFlow<String> = _categoryFilter.asStateFlow()
 
-    private val _feedbackFilter = MutableStateFlow("全部")
+    private val _feedbackFilter = MutableStateFlow("未反馈")
     val feedbackFilter: StateFlow<String> = _feedbackFilter.asStateFlow()
 
     private val _message = MutableStateFlow<String?>(null)

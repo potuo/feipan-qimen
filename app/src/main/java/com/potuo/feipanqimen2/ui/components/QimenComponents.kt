@@ -11,6 +11,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -45,15 +46,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.gson.Gson
+import com.potuo.feipanqimen2.QimenBoardSpec
 import com.potuo.feipanqimen2.qimen.PalaceInfo
 import com.potuo.feipanqimen2.qimen.QimenResult
 import com.potuo.feipanqimen2.ui.theme.CardShape
 import com.potuo.feipanqimen2.ui.theme.LocalQimenPalette
 import com.potuo.feipanqimen2.ui.theme.PalaceShape
 import com.potuo.feipanqimen2.ui.theme.QimenDimens
+import com.potuo.feipanqimen2.ui.theme.QimenFontFamily
 import kotlinx.coroutines.delay
 
-private val gridOrder = listOf(4, 9, 2, 3, 5, 7, 8, 1, 6)
+private val gridOrder = QimenBoardSpec.gridOrder
 
 /** 动画出场顺序：值符宫最先 → 值使宫 → 其余按洛书序 */
 private fun animationOrder(zhiFu: Int, zhiShi: Int): List<Int> = buildList {
@@ -77,6 +80,7 @@ fun QimenBoard(
     result: QimenResult,
     modifier: Modifier = Modifier,
     animate: Boolean = true,
+    onPalaceClick: (Int) -> Unit = {},
 ) {
     val dark = isSystemInDarkTheme()
     val reduceMotion = systemAnimationsOff()
@@ -129,6 +133,7 @@ fun QimenBoard(
                             info = info,
                             result = result,
                             dark = dark,
+                            onClick = { onPalaceClick(palaceNum) },
                         )
                     }
                     if (!isVisible) {
@@ -146,6 +151,7 @@ private fun PalaceCell(
     result: QimenResult,
     dark: Boolean,
     modifier: Modifier = Modifier,
+    onClick: () -> Unit = {},
 ) {
     val palette = LocalQimenPalette.current
     val bgColor = when {
@@ -158,25 +164,23 @@ private fun PalaceCell(
     val red = palette.cinnabar              // 朱砂（值符星/值使门/日时干/地盘值符）
 
     // 值符宫（值符星落宫）/ 值使宫（值使门落宫）：朱砂描边强调（中宫同普通灰边，以分享图样式为准）
-    val isSpecial = info.star == result.zhiFuStar || info.gate == result.zhiShiGate
+    val hl = QimenBoardSpec.highlights(info, result)
+    val isSpecial = hl.isSpecial
     val borderColor = when {
         isSpecial -> palette.cinnabar
         else -> palette.gridBorder.copy(alpha = if (dark) 0.6f else 0.5f)
     }
     val borderWidth = if (isSpecial) 1.5.dp else QimenDimens.gridBorder
 
-    // 红色判定
-    val starRed = info.star == result.zhiFuStar
-    val gateRed = info.gate == result.zhiShiGate
-    val heavenRed = info.heavenStem.isNotEmpty() &&
-        (info.heavenStem == result.dayPillar.first().toString() ||
-            info.heavenStem == result.hourPillar.first().toString())
-    val earthGodRed = info.earthGod == "值符"
+    // 红色判定（共享规则，见 QimenBoardSpec）
+    val starRed = hl.starRed
+    val gateRed = hl.gateRed
+    val heavenRed = hl.heavenRed
+    val earthGodRed = hl.earthGodRed
 
-    // 暗干支拆分：干 → 星行左，支 → 门行左
-    val hidden = info.hiddenStem.orEmpty()
-    val hiddenGan = hidden.firstOrNull()?.toString() ?: ""
-    val hiddenZhi = hidden.lastOrNull()?.toString() ?: ""
+    // 暗干支拆分：干 → 星行左，支 → 门行左（共享规则）
+    val hiddenGan = QimenBoardSpec.hiddenGan(info)
+    val hiddenZhi = QimenBoardSpec.hiddenZhi(info)
 
     // 值符/值使宫：入场后朱砂光晕扩散一次
     var glowStage by remember { mutableStateOf(0) }
@@ -206,6 +210,7 @@ private fun PalaceCell(
             .aspectRatio(1f)
             .background(bgColor, PalaceShape)
             .border(borderWidth + glowWidth, actualBorder, PalaceShape)
+            .clickable(onClick = onClick)
             .padding(3.dp),
     ) {
         Column(
@@ -229,6 +234,7 @@ private fun PalaceCell(
                     fontSize = 8.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = subColor,
+                    fontFamily = QimenFontFamily,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.align(Alignment.Center),
                 )
@@ -317,6 +323,7 @@ private fun PalaceCell(
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     color = if (gateRed) red else textColor,
+                    fontFamily = QimenFontFamily,
                     modifier = Modifier.align(Alignment.Center),
                 )
                 if (info.earthStem.isNotEmpty()) {
@@ -364,6 +371,7 @@ private fun PalaceCell(
                         fontSize = 8.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = if (earthGodRed) red else subColor,
+                        fontFamily = QimenFontFamily,
                         modifier = Modifier.padding(start = 4.dp),
                     )
                 }

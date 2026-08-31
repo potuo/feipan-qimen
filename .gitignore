@@ -16,7 +16,8 @@ captures/
 *.iml
 .DS_Store
 
-# 本地文档（内部开发用）
+# 本地文档（内部开发用，勿上传）
+PROJECT.md
 PRD.md
 UI_DESIGN_GUIDE.md
 UI_V3_GUIDE.md

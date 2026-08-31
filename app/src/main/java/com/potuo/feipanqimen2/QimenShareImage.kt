@@ -30,7 +30,7 @@ object QimenShareImage {
     fun create(result: QimenResult, palette: QimenPalette, dir: File, extra: CaseShareInfo? = null): File {
         val boardSize = 900
         val titleH = 260
-        val footerH = 180
+        val footerH = 280
         // 案例信息区（仅在有内容时占用高度）
         val extraLines = buildList {
             if (!extra?.tags.isNullOrBlank()) add("标签：${extra!!.tags}")
@@ -105,7 +105,7 @@ object QimenShareImage {
         val left = (WIDTH - boardSize) / 2f
         val top = titleH.toFloat()
         val cell = boardSize / 3f
-        val gridOrder = listOf(4, 9, 2, 3, 5, 7, 8, 1, 6)
+        val gridOrder = QimenBoardSpec.gridOrder
         val cellBg = Paint(Paint.ANTI_ALIAS_FLAG)
 
         gridOrder.forEachIndexed { index, palaceNum ->
@@ -114,27 +114,24 @@ object QimenShareImage {
             val x = left + col * cell
             val y = top + row * cell
             val info = result.palaces[palaceNum] ?: return@forEachIndexed
-            val isZhiFu = palaceNum == result.zhiFuPalace
-            val isZhiShi = palaceNum == result.zhiShiPalace
+            val hl = QimenBoardSpec.highlights(info, result)
 
             cellBg.color = palette.paper.toArgb()
             canvas.drawRect(x, y, x + cell, y + cell, cellBg)
             val rect = RectF(x, y, x + cell, y + cell)
-            if (isZhiFu || isZhiShi) {
+            if (hl.isSpecial) {
                 canvas.drawRect(rect, specialPaint)
             } else {
                 canvas.drawRect(rect, borderPaint)
             }
 
             val cx = x + cell / 2f
-            val hiddenGan = info.hiddenStem?.firstOrNull()?.toString() ?: ""
-            val hiddenZhi = info.hiddenStem?.lastOrNull()?.toString() ?: ""
-            val starRed = info.star == result.zhiFuStar
-            val gateRed = info.gate == result.zhiShiGate
-            val heavenRed = info.heavenStem.isNotEmpty() &&
-                (info.heavenStem == result.dayPillar.first().toString() ||
-                    info.heavenStem == result.hourPillar.first().toString())
-            val earthGodRed = info.earthGod == "值符"
+            val hiddenGan = QimenBoardSpec.hiddenGan(info)
+            val hiddenZhi = QimenBoardSpec.hiddenZhi(info)
+            val starRed = hl.starRed
+            val gateRed = hl.gateRed
+            val heavenRed = hl.heavenRed
+            val earthGodRed = hl.earthGodRed
 
             // ── 行1：宫名（左）＋ 天盘神（中）＋ 角标（右上：马/迫/刑/墓棕）──
             canvas.drawText("${info.direction}$palaceNum", x + 55f, y + 50f, cellSub)
@@ -183,18 +180,43 @@ object QimenShareImage {
         }
 
         // ── 底部 ──
-        val footerY = top + boardSize + 80f
+        val footerY = top + boardSize + 70f
         canvas.drawText(
             "值符：${result.zhiFuStar}·${QimenConstants.PALACE_NAMES[result.zhiFuPalace]}${result.zhiFuPalace}宫   值使：${result.zhiShiGate}门·${QimenConstants.PALACE_NAMES[result.zhiShiPalace]}${result.zhiShiPalace}宫",
             WIDTH / 2f,
             footerY,
             cellText,
         )
-        canvas.drawText("空亡：${result.kongWang}", WIDTH / 2f, footerY + 60f, goldPaint)
+        canvas.drawText("空亡：${result.kongWang}", WIDTH / 2f, footerY + 55f, goldPaint)
+
+        // ── 印章 + 四柱落款（右下角）──
+        val sealSize = 104f
+        val sealX = WIDTH - 200f
+        val sealY = footerY - 20f
+        val sealBorder = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = 6f
+            color = palette.cinnabar.toArgb()
+        }
+        val sealText = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = palette.cinnabar.toArgb()
+            textSize = 38f
+            typeface = Typeface.DEFAULT_BOLD
+            textAlign = Paint.Align.CENTER
+        }
+        canvas.drawRect(sealX, sealY, sealX + sealSize, sealY + sealSize, sealBorder)
+        canvas.drawText("天", sealX + sealSize / 2f, sealY + 46f, sealText)
+        canvas.drawText("禽", sealX + sealSize / 2f, sealY + 88f, sealText)
+        val sealCaption = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = palette.slate.toArgb()
+            textSize = 26f
+            textAlign = Paint.Align.CENTER
+        }
+        canvas.drawText(result.siZhu, sealX + sealSize / 2f, sealY + sealSize + 32f, sealCaption)
 
         // ── 案例信息区（标签/备注/反馈，有内容才绘制）──
         if (extraLines.isNotEmpty()) {
-            val infoTop = footerY + 120f
+            val infoTop = footerY + 150f
             val linePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = palette.inkText.toArgb()
                 textSize = 32f
