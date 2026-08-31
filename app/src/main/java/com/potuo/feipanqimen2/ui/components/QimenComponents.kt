@@ -217,10 +217,12 @@ private fun PalaceCell(
             Box(modifier = Modifier.fillMaxWidth()) {
                 Text(
                     text = "${info.direction}${info.palace}",
-                    fontSize = 7.sp,
+                    fontSize = 8.sp,
                     fontWeight = FontWeight.Medium,
                     color = subColor.copy(alpha = 0.7f),
-                    modifier = Modifier.align(Alignment.CenterStart),
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .padding(start = 2.dp),
                 )
                 Text(
                     info.god,
@@ -245,14 +247,16 @@ private fun PalaceCell(
                 }
             }
 
-            // ── 行2：星行 = 暗干(棕) 星(黑/红) 天盘干(黑/红) ──
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            // ── 行2：星行 = 暗干(棕,左列) 星(黑/红,中列) 天盘干(黑/红,右列)（三列对齐，同分享图）──
+            Box(modifier = Modifier.fillMaxWidth()) {
                 if (hiddenGan.isNotEmpty()) {
                     Text(
                         hiddenGan,
-                        fontSize = 9.sp,
+                        fontSize = 10.sp,
                         color = stemColor,
-                        modifier = Modifier.padding(end = 3.dp),
+                        modifier = Modifier
+                            .align(Alignment.CenterStart)
+                            .padding(start = 3.dp),
                     )
                 }
                 Text(
@@ -260,34 +264,52 @@ private fun PalaceCell(
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     color = if (starRed) red else textColor,
+                    modifier = Modifier.align(Alignment.Center),
                 )
                 if (info.heavenStem.isNotEmpty()) {
                     Text(
                         info.heavenStem,
-                        fontSize = 9.sp,
+                        fontSize = 10.sp,
                         color = if (heavenRed) red else textColor,
-                        modifier = Modifier.padding(start = 3.dp),
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .padding(end = 3.dp),
                     )
                 }
             }
 
-            // ── 行3：六亲 = 星六亲 + 天盘干六亲（小字）──
+            // ── 行3：六亲 = 星六亲(左列) + 天盘干六亲(右列)（小字）──
             if (info.liuQinStar.isNotEmpty()) {
-                Row {
-                    Text(info.liuQinStar, fontSize = 7.sp, color = subColor)
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(info.liuQinHeaven, fontSize = 7.sp, color = subColor)
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        info.liuQinStar,
+                        fontSize = 7.sp,
+                        color = subColor,
+                        modifier = Modifier
+                            .align(Alignment.CenterStart)
+                            .padding(start = 4.dp),
+                    )
+                    Text(
+                        info.liuQinHeaven,
+                        fontSize = 7.sp,
+                        color = subColor,
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .padding(end = 4.dp),
+                    )
                 }
             }
 
-            // ── 行4：门行 = 暗支(棕) 门(黑/红) 地盘干(黑) ──
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            // ── 行4：门行 = 暗支(棕,左列) 门(黑/红,中列) 地盘干(黑,右列)──
+            Box(modifier = Modifier.fillMaxWidth()) {
                 if (hiddenZhi.isNotEmpty()) {
                     Text(
                         hiddenZhi,
-                        fontSize = 9.sp,
+                        fontSize = 10.sp,
                         color = stemColor,
-                        modifier = Modifier.padding(end = 3.dp),
+                        modifier = Modifier
+                            .align(Alignment.CenterStart)
+                            .padding(start = 3.dp),
                     )
                 }
                 Text(
@@ -295,23 +317,39 @@ private fun PalaceCell(
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     color = if (gateRed) red else textColor,
+                    modifier = Modifier.align(Alignment.Center),
                 )
                 if (info.earthStem.isNotEmpty()) {
                     Text(
                         info.earthStem,
-                        fontSize = 9.sp,
+                        fontSize = 10.sp,
                         color = textColor,
-                        modifier = Modifier.padding(start = 3.dp),
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .padding(end = 3.dp),
                     )
                 }
             }
 
-            // ── 行5：六亲 = 门六亲 + 地盘干六亲（小字）──
+            // ── 行5：六亲 = 门六亲(左列) + 地盘干六亲(右列)（小字）──
             if (info.liuQinGate.isNotEmpty()) {
-                Row {
-                    Text(info.liuQinGate, fontSize = 7.sp, color = subColor)
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(info.liuQinEarth, fontSize = 7.sp, color = subColor)
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        info.liuQinGate,
+                        fontSize = 7.sp,
+                        color = subColor,
+                        modifier = Modifier
+                            .align(Alignment.CenterStart)
+                            .padding(start = 4.dp),
+                    )
+                    Text(
+                        info.liuQinEarth,
+                        fontSize = 7.sp,
+                        color = subColor,
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .padding(end = 4.dp),
+                    )
                 }
             }
 
