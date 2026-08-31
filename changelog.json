@@ -1,6 +1,15 @@
 {
   "logs": [
     {
+      "version": "v4.1.0",
+      "date": "2026-09-01",
+      "items": [
+        "新增官网（GitHub Pages）：https://potuo.github.io/",
+        "关于页新增官网入口",
+        "侧滑栏顺序调整：排盘 / 案例 / 黄历 / 总纲 / 玄鉴 / 设置 / 关于"
+      ]
+    },
+    {
       "version": "v4.0.0",
       "date": "2026-09-01",
       "items": [

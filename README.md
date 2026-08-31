@@ -1,5 +1,7 @@
 # 天禽 · 飞盘奇门排盘
 
+🌐 **官网**：[https://potuo.github.io/](https://potuo.github.io/)
+
 > 据《奇门基础资料 2023版教》鸣法体系的**飞盘奇门**排盘 Android App
 > 鸣法体系 · 值使飞宫法 · 星门顺飞 · 符使入中
 

@@ -305,24 +305,6 @@ fun MainApp(
                     },
                     icon = { Icon(Icons.Default.MenuBook, contentDescription = null) },
                 )
-                NavigationDrawerItem(
-                    label = { Text("关于") },
-                    selected = section == Section.ABOUT,
-                    onClick = {
-                        section = Section.ABOUT
-                        scope.launch { drawerState.close() }
-                    },
-                    icon = { Icon(Icons.Default.Info, contentDescription = null) },
-                )
-                NavigationDrawerItem(
-                    label = { Text("设置") },
-                    selected = section == Section.SETTINGS,
-                    onClick = {
-                        section = Section.SETTINGS
-                        scope.launch { drawerState.close() }
-                    },
-                    icon = { Icon(Icons.Default.Settings, contentDescription = null) },
-                )
                 if (AiAssistant.readConfig(context).enabled) {
                     NavigationDrawerItem(
                         label = { Text("玄鉴") },
@@ -334,6 +316,24 @@ fun MainApp(
                         icon = { Icon(Icons.Default.AutoAwesome, contentDescription = null) },
                     )
                 }
+                NavigationDrawerItem(
+                    label = { Text("设置") },
+                    selected = section == Section.SETTINGS,
+                    onClick = {
+                        section = Section.SETTINGS
+                        scope.launch { drawerState.close() }
+                    },
+                    icon = { Icon(Icons.Default.Settings, contentDescription = null) },
+                )
+                NavigationDrawerItem(
+                    label = { Text("关于") },
+                    selected = section == Section.ABOUT,
+                    onClick = {
+                        section = Section.ABOUT
+                        scope.launch { drawerState.close() }
+                    },
+                    icon = { Icon(Icons.Default.Info, contentDescription = null) },
+                )
                 Spacer(modifier = Modifier.weight(1f))
                 // 黑白切换按钮（仅图标，带动效）
                 Row(

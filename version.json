@@ -1,5 +1,5 @@
 {
-  "version": "4.0.0",
+  "version": "4.1.0",
   "apk_url": "https://gitee.com/potuo/feipan-qimen/releases/download/v4.0.0/app-debug.apk",
-  "notes": "玄鉴 AI 断局 + 资料 skill 系统 + 思考过程 + 格局折叠"
+  "notes": "官网 + 关于页官网入口 + 侧滑栏顺序调整"
 }
