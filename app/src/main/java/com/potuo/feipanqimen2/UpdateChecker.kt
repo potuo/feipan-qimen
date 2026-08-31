@@ -41,6 +41,10 @@ object UpdateChecker {
     private const val RAW_CHANGELOG = "https://raw.githubusercontent.com/$REPO/master/changelog.json"
     private const val CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000L
 
+    // ── 国内源（腾讯云 COS，主源）──
+    private const val COS_BASE = "https://tianqin-feipan-qimen-1309309686.cos.ap-shanghai.myqcloud.com"
+    private val COS_ENABLED = !COS_BASE.contains("PLACEHOLDER")
+
     /** 版本比较：a > b 返回正数，a < b 返回负数，相等返回 0。语义化分段比较，v 前缀忽略。 */
     fun compareVersions(a: String, b: String): Int {
         val pa = a.trimStart('v').split('.').mapNotNull { it.toIntOrNull() }
@@ -63,9 +67,12 @@ object UpdateChecker {
             .edit().putLong("last_update_check", System.currentTimeMillis()).apply()
     }
 
-    /** 检查最新版本：GitHub API → jsDelivr → raw，全部失败返回 null（调用方静默处理） */
+    /** 检查最新版本：COS（国内）→ GitHub API → jsDelivr → raw，全部失败返回 null（调用方静默处理） */
     suspend fun checkLatest(): UpdateInfo? = withContext(Dispatchers.IO) {
-        fetchGitHubApi() ?: fetchVersionFile(JS_DELIVR) ?: fetchVersionFile(RAW_GITHUB)
+        if (COS_ENABLED) fetchVersionFile("$COS_BASE/version.json") else null
+            ?: fetchGitHubApi()
+            ?: fetchVersionFile(JS_DELIVR)
+            ?: fetchVersionFile(RAW_GITHUB)
     }
 
     private fun fetchGitHubApi(): UpdateInfo? {
@@ -109,9 +116,11 @@ object UpdateChecker {
         }.getOrNull()
     }
 
-    /** 拉取更新日志（jsDelivr 主，raw 兜底），失败返回 null（调用方可回退本地缓存） */
+    /** 拉取更新日志（COS 主，jsDelivr/raw 兜底），失败返回 null（调用方可回退本地缓存） */
     suspend fun fetchChangelog(): List<ChangelogEntry>? = withContext(Dispatchers.IO) {
-        fetchChangelogFrom(JS_DELIVR_CHANGELOG) ?: fetchChangelogFrom(RAW_CHANGELOG)
+        if (COS_ENABLED) fetchChangelogFrom("$COS_BASE/changelog.json") else null
+            ?: fetchChangelogFrom(JS_DELIVR_CHANGELOG)
+            ?: fetchChangelogFrom(RAW_CHANGELOG)
     }
 
     private fun fetchChangelogFrom(url: String): List<ChangelogEntry>? {
