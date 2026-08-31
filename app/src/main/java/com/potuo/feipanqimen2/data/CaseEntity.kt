@@ -19,4 +19,5 @@ data class CaseEntity(
     val tags: String = "",
     val note: String = "",
     val huangLi: String = "",
+    val feedback: String = "",
 )

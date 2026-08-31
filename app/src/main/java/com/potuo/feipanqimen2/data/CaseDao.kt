@@ -64,6 +64,29 @@ interface CaseDao {
     )
     fun searchCasesByCategory(query: String, category: String): Flow<List<CaseEntity>>
 
+    /**
+     * 组合筛选：搜索关键词 × 事项类别 × 反馈状态（'全部'/'已反馈'/'未反馈'）。
+     * 反馈状态：feedback 字段非空即已反馈。
+     */
+    @Query(
+        """
+        SELECT * FROM cases WHERE
+            (:query = '' OR siZhu LIKE '%' || :query || '%' OR
+             CAST(juNumber AS TEXT) LIKE '%' || :query || '%' OR
+             jieQi LIKE '%' || :query || '%' OR
+             tags LIKE '%' || :query || '%' OR
+             note LIKE '%' || :query || '%' OR
+             panDate LIKE '%' || :query || '%' OR
+             dunType LIKE '%' || :query || '%')
+            AND (:category = '全部' OR category = :category)
+            AND (:feedbackFilter = '全部'
+                 OR (:feedbackFilter = '已反馈' AND feedback != '')
+                 OR (:feedbackFilter = '未反馈' AND feedback = ''))
+        ORDER BY createTime DESC
+        """,
+    )
+    fun searchCasesFiltered(query: String, category: String, feedbackFilter: String): Flow<List<CaseEntity>>
+
     @Query("SELECT category, COUNT(*) AS count FROM cases GROUP BY category ORDER BY count DESC")
     fun categoryStats(): Flow<List<CategoryStat>>
 }

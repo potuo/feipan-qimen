@@ -3,6 +3,7 @@ package com.potuo.feipanqimen2.ui
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -18,6 +19,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,6 +29,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -42,8 +45,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
+import com.potuo.feipanqimen2.PatternBook
 import com.potuo.feipanqimen2.QimenShareImage
 import com.potuo.feipanqimen2.data.CASE_CATEGORIES
+import com.potuo.feipanqimen2.qimen.PatternInfo
 import com.potuo.feipanqimen2.qimen.QimenConstants
 import com.potuo.feipanqimen2.qimen.QimenPatternDetector
 import com.potuo.feipanqimen2.ui.components.HuangLiCard
@@ -67,6 +72,7 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
     val tags by viewModel.tags.collectAsState()
     val category by viewModel.selectedCategory.collectAsState()
     var huangLiExpanded by remember { mutableStateOf(false) }
+    var patternDetail by remember { mutableStateOf<PatternInfo?>(null) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val palette = LocalQimenPalette.current
@@ -154,7 +160,11 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                     )
                     Spacer(modifier = Modifier.height(QimenDimens.spacingMd))
                     patterns.forEach { p ->
-                        Column(modifier = Modifier.padding(bottom = QimenDimens.spacingMd)) {
+                        Column(
+                            modifier = Modifier
+                                .padding(bottom = QimenDimens.spacingMd)
+                                .clickable { patternDetail = p },
+                        ) {
                             Text(
                                 p.name,
                                 style = MaterialTheme.typography.bodyLarge,
@@ -171,6 +181,12 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 lineHeight = 22.sp,
+                            )
+                            Text(
+                                "📖 点按查看教材原文",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                                modifier = Modifier.padding(top = 2.dp),
                             )
                         }
                     }
@@ -250,5 +266,53 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                 Text("分享盘面")
             }
         }
+    }
+
+    // ── 格局详情：点按弹出教材原文 ──
+    patternDetail?.let { p ->
+        val bookText = remember(p.name) { PatternBook.lookup(context, p.name) }
+        AlertDialog(
+            onDismissRequest = { patternDetail = null },
+            title = {
+                Text(
+                    p.name,
+                    color = when (p.isAuspicious) {
+                        true -> MaterialTheme.colorScheme.primary
+                        false -> MaterialTheme.colorScheme.error
+                        null -> MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                ) {
+                    Text(
+                        p.detail,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        lineHeight = 20.sp,
+                    )
+                    Spacer(modifier = Modifier.height(QimenDimens.spacingMd))
+                    Text(
+                        "《奇门基础资料 2023版教》· 第三卷 原文",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        bookText ?: "（教材未收录此格局的单独原文，以上为盘面判定说明）",
+                        fontSize = 14.sp,
+                        lineHeight = 22.sp,
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { patternDetail = null }) { Text("知道了") }
+            },
+        )
     }
 }

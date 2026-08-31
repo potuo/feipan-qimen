@@ -55,12 +55,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _categoryFilter = MutableStateFlow("全部")
     val categoryFilter: StateFlow<String> = _categoryFilter.asStateFlow()
 
+    private val _feedbackFilter = MutableStateFlow("全部")
+    val feedbackFilter: StateFlow<String> = _feedbackFilter.asStateFlow()
+
     private val _message = MutableStateFlow<String?>(null)
     val message: StateFlow<String?> = _message.asStateFlow()
 
-    val cases = combine(_searchQuery, _categoryFilter) { q, c -> q to c }
-        .flatMapLatest { (q, c) ->
-            if (c == "全部") repository.searchCases(q) else repository.searchCasesByCategory(q, c)
+    val cases = combine(_searchQuery, _categoryFilter, _feedbackFilter) { q, c, f -> Triple(q, c, f) }
+        .flatMapLatest { (q, c, f) ->
+            repository.searchCasesFiltered(q, c, f)
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val categoryStats = repository.categoryStats()
@@ -73,6 +76,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun setCategory(category: String) { _selectedCategory.value = category }
     fun setSearchQuery(query: String) { _searchQuery.value = query }
     fun setCategoryFilter(category: String) { _categoryFilter.value = category }
+    fun setFeedbackFilter(filter: String) { _feedbackFilter.value = filter }
     fun clearMessage() { _message.value = null }
 
     fun calculate() {
@@ -134,9 +138,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         } else null
     }
 
-    fun updateCase(case: CaseEntity, tags: String, note: String) {
+    fun updateCase(case: CaseEntity, tags: String, note: String, feedback: String) {
         viewModelScope.launch {
-            repository.update(case.copy(tags = tags, note = note))
+            repository.update(case.copy(tags = tags, note = note, feedback = feedback))
             _message.value = "已保存"
         }
     }

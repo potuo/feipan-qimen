@@ -1,6 +1,7 @@
 package com.potuo.feipanqimen2.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -31,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import com.potuo.feipanqimen2.data.CaseEntity
 import com.potuo.feipanqimen2.qimen.QimenConstants
 import com.potuo.feipanqimen2.ui.components.HuangLiCard
@@ -53,6 +56,7 @@ fun CaseDetailScreen(
     var case by remember { mutableStateOf<CaseEntity?>(null) }
     var tags by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
+    var feedback by remember { mutableStateOf("") }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var huangLiExpanded by remember { mutableStateOf(false) }
     val result by viewModel.qimenResult.collectAsState()
@@ -65,6 +69,7 @@ fun CaseDetailScreen(
         loaded?.let {
             tags = it.tags
             note = it.note
+            feedback = it.feedback
             viewModel.loadCase(it)
         }
     }
@@ -105,7 +110,33 @@ fun CaseDetailScreen(
             }
         }
             Text(c.siZhu, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-            Text("${c.dunType}${c.juNumber}局 · ${c.jieQi} · ${c.yuan}")
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            ) {
+                Text("${c.dunType}${c.juNumber}局 · ${c.jieQi} · ${c.yuan}")
+                Text(
+                    if (feedback.isNotBlank()) "已反馈" else "未反馈",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (feedback.isNotBlank()) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    },
+                    modifier = Modifier
+                        .background(
+                            if (feedback.isNotBlank()) {
+                                MaterialTheme.colorScheme.primaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.surfaceVariant
+                            },
+                            RoundedCornerShape(50),
+                        )
+                        .padding(horizontal = 10.dp, vertical = 3.dp),
+                )
+            }
             Text("值符：${r.zhiFuStar}落${QimenConstants.PALACE_NAMES[r.zhiFuPalace]}宫")
             Text("值使：${r.zhiShiGate}门落${QimenConstants.PALACE_NAMES[r.zhiShiPalace]}宫")
 
@@ -132,9 +163,16 @@ fun CaseDetailScreen(
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3,
             )
+            OutlinedTextField(
+                value = feedback,
+                onValueChange = { feedback = it },
+                label = { Text("反馈结果（填写后该盘标记为已反馈）") },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 2,
+            )
 
             QimenButton(
-                onClick = { viewModel.updateCase(c, tags, note) },
+                onClick = { viewModel.updateCase(c, tags, note, feedback) },
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("保存修改") }
     }

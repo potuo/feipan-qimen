@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -56,6 +57,7 @@ fun CaseListScreen(
     val cases by viewModel.cases.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val categoryFilter by viewModel.categoryFilter.collectAsState()
+    val feedbackFilter by viewModel.feedbackFilter.collectAsState()
     val categoryStats by viewModel.categoryStats.collectAsState()
     val dateFormat = SimpleDateFormat("MM-dd HH:mm", Locale.CHINA)
 
@@ -84,6 +86,25 @@ fun CaseListScreen(
                         selected = categoryFilter == c,
                         onClick = { viewModel.setCategoryFilter(c) },
                         label = { Text(c) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        ),
+                    )
+                }
+            }
+
+            // 反馈状态筛选
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm),
+                verticalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm),
+                modifier = Modifier.padding(top = QimenDimens.spacingXs),
+            ) {
+                listOf("全部", "已反馈", "未反馈").forEach { f ->
+                    FilterChip(
+                        selected = feedbackFilter == f,
+                        onClick = { viewModel.setFeedbackFilter(f) },
+                        label = { Text(f) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                             selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -162,6 +183,21 @@ private fun CaseCard(case: CaseEntity, dateFormat: SimpleDateFormat, onClick: ()
                     color = MaterialTheme.colorScheme.primary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Row(
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                modifier = Modifier.padding(top = 2.dp),
+            ) {
+                Text(
+                    if (case.feedback.isNotBlank()) "● 已反馈" else "○ 未反馈",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (case.feedback.isNotBlank()) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    },
                 )
             }
             if (case.tags.isNotBlank()) {

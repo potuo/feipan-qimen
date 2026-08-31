@@ -47,6 +47,9 @@ class CaseRepository(private val dao: CaseDao) {
     fun searchCasesByCategory(query: String, category: String): Flow<List<CaseEntity>> =
         dao.searchCasesByCategory(query, category)
 
+    fun searchCasesFiltered(query: String, category: String, feedbackFilter: String): Flow<List<CaseEntity>> =
+        dao.searchCasesFiltered(query, category, feedbackFilter)
+
     fun categoryStats(): Flow<List<CategoryStat>> = dao.categoryStats()
 
     fun serializePan(result: QimenResult): String = gson.toJson(result)
