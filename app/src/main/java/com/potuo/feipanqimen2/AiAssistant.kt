@@ -96,11 +96,17 @@ object AiAssistant {
     private const val API_KEYS_KEY = "xuanjian_api_keys"
 
     /** 内置 skill 元数据（内容从 assets/xuanjian/ 读，写入仓库） */
-    private data class BuiltinSpec(val asset: String, val name: String, val locked: Boolean)
+    private data class BuiltinSpec(
+        val asset: String,
+        val name: String,
+        val locked: Boolean,
+        val defaultEnabled: Boolean = true,
+    )
 
     private val BUILTIN_SPECS = listOf(
         BuiltinSpec("xuanjian/qimen-divination-discipline.md", "占断思维纪律", locked = true),
-        BuiltinSpec("xuanjian/feipan-qimen-spec.md", "飞盘奇门规格", locked = false),
+        BuiltinSpec("xuanjian/feipan-qimen-spec.md", "飞盘奇门规格", locked = false, defaultEnabled = false),
+        BuiltinSpec("xuanjian/qimen-beginner-guide.md", "初学者思路引导", locked = false, defaultEnabled = true),
     )
 
     fun readConfig(context: Context): AiConfig {
@@ -144,7 +150,7 @@ object AiAssistant {
             XuanJianSkill(
                 name = spec.name,
                 content = readAsset(context, spec.asset),
-                enabled = if (spec.locked) true else p.getBoolean("builtin_enabled_${spec.name}", true),
+                enabled = if (spec.locked) true else p.getBoolean("builtin_enabled_${spec.name}", spec.defaultEnabled),
                 builtin = true,
                 locked = spec.locked,
             )

@@ -27,11 +27,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.potuo.feipanqimen2.data.CASE_CATEGORIES
+import com.potuo.feipanqimen2.data.CaseTags
 import com.potuo.feipanqimen2.data.CaseEntity
 import com.potuo.feipanqimen2.ui.components.EmptyState
 import com.potuo.feipanqimen2.ui.components.MiniBoard
@@ -56,6 +57,7 @@ fun CaseListScreen(
     val categoryStats by viewModel.categoryStats.collectAsState()
     val feedbackStats by viewModel.feedbackStats.collectAsState()
     val dateFormat = SimpleDateFormat("MM-dd HH:mm", Locale.CHINA)
+    val context = LocalContext.current
 
     val feedbackedCount = feedbackStats.find { it.f == "已反馈" }?.c ?: 0
     val notFeedbackedCount = feedbackStats.find { it.f == "未反馈" }?.c ?: 0
@@ -75,21 +77,21 @@ fun CaseListScreen(
                 singleLine = true,
             )
 
-            // 反馈状态 Tab（已反馈 / 未反馈）
-            val feedbackTabIndex = if (feedbackFilter == "已反馈") 0 else 1
+            // 反馈状态 Tab（未反馈 / 已反馈）
+            val feedbackTabIndex = if (feedbackFilter == "未反馈") 0 else 1
             SecondaryTabRow(
                 selectedTabIndex = feedbackTabIndex,
                 modifier = Modifier.padding(vertical = QimenDimens.spacingXs),
             ) {
                 Tab(
                     selected = feedbackTabIndex == 0,
-                    onClick = { viewModel.setFeedbackFilter("已反馈") },
-                    text = { Text("已反馈 $feedbackedCount") },
+                    onClick = { viewModel.setFeedbackFilter("未反馈") },
+                    text = { Text("未反馈 $notFeedbackedCount") },
                 )
                 Tab(
                     selected = feedbackTabIndex == 1,
-                    onClick = { viewModel.setFeedbackFilter("未反馈") },
-                    text = { Text("未反馈 $notFeedbackedCount") },
+                    onClick = { viewModel.setFeedbackFilter("已反馈") },
+                    text = { Text("已反馈 $feedbackedCount") },
                 )
             }
 
@@ -98,7 +100,7 @@ fun CaseListScreen(
                 horizontalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm),
                 verticalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm),
             ) {
-                (listOf("全部") + CASE_CATEGORIES).forEach { c ->
+                (listOf("全部") + CaseTags.read(context)).forEach { c ->
                     FilterChip(
                         selected = categoryFilter == c,
                         onClick = { viewModel.setCategoryFilter(c) },

@@ -8,6 +8,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -47,7 +49,7 @@ import com.potuo.feipanqimen2.AiAssistant
 import com.potuo.feipanqimen2.log.LogManager
 import com.potuo.feipanqimen2.PatternBook
 import com.potuo.feipanqimen2.QimenShareImage
-import com.potuo.feipanqimen2.data.CASE_CATEGORIES
+import com.potuo.feipanqimen2.data.CaseTags
 import com.potuo.feipanqimen2.qimen.PatternInfo
 import com.potuo.feipanqimen2.qimen.QimenConstants
 import com.potuo.feipanqimen2.qimen.QimenPatternDetector
@@ -67,7 +69,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
     val result by viewModel.qimenResult.collectAsState()
@@ -172,7 +174,7 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
 
         QimenBoard(result = r, animate = boardAnimate, onPalaceClick = { selectedPalace = it })
 
-        // ── 格局（据《奇门基础资料 2023版教》第三卷，可折叠）──
+        // ── 格局（据《奇门鸣法》第三卷，可折叠）──
         if (patterns.isNotEmpty()) {
             QimenCard(accentBar = true) {
                 var patternsExpanded by remember { mutableStateOf(true) }
@@ -243,7 +245,7 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
         OutlinedTextField(
             value = tags,
             onValueChange = viewModel::setTags,
-            label = { Text("标签（逗号分隔）") },
+            label = { Text("占断/备注") },
             modifier = Modifier.fillMaxWidth(),
         )
 
@@ -253,24 +255,21 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center,
         )
-        // 事项类别：4 + 3 两行，间距宽松
-        CASE_CATEGORIES.chunked(4).forEach { rowNames ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(QimenDimens.spacingMd),
-            ) {
-                rowNames.forEach { c ->
-                    FilterChip(
-                        selected = category == c,
-                        onClick = { viewModel.setCategory(c) },
-                        label = { Text(c) },
-                        modifier = Modifier.weight(1f),
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        ),
-                    )
-                }
+        // 事项类别：自适应流式标签（与案例页标签同尺寸）
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm),
+            verticalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm),
+        ) {
+            CaseTags.read(context).forEach { c ->
+                FilterChip(
+                    selected = category == c,
+                    onClick = { viewModel.setCategory(c) },
+                    label = { Text(c) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    ),
+                )
             }
         }
 
@@ -430,7 +429,7 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                     )
                     Spacer(modifier = Modifier.height(QimenDimens.spacingMd))
                     Text(
-                        "《奇门基础资料 2023版教》· 第三卷 原文",
+                        "《奇门鸣法》· 第三卷 原文",
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,

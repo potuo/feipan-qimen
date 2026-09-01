@@ -113,10 +113,10 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 private enum class Section(val title: String) {
-    PAN("飞盘排盘"),
-    CASES("案例库"),
+    PAN("鸣法"),
+    CASES("案例"),
     HUANGLI("黄历"),
-    LEARN("飞盘总纲"),
+    LEARN("总纲"),
     ABOUT("关于"),
     SETTINGS("设置"),
 }
@@ -290,7 +290,7 @@ fun MainApp(
                 DrawerHeader()
                 HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
                 NavigationDrawerItem(
-                    label = { Text("飞盘排盘") },
+                    label = { Text("鸣法") },
                     selected = section == Section.PAN,
                     onClick = {
                         section = Section.PAN
@@ -301,7 +301,7 @@ fun MainApp(
                     icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null) },
                 )
                 NavigationDrawerItem(
-                    label = { Text("案例库") },
+                    label = { Text("案例") },
                     selected = section == Section.CASES,
                     onClick = {
                         section = Section.CASES
@@ -320,7 +320,7 @@ fun MainApp(
                     icon = { Icon(Icons.Default.CalendarMonth, contentDescription = null) },
                 )
                 NavigationDrawerItem(
-                    label = { Text("飞盘总纲") },
+                    label = { Text("总纲") },
                     selected = section == Section.LEARN,
                     onClick = {
                         section = Section.LEARN
@@ -693,7 +693,7 @@ private fun SplashScreen() {
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            "飞盘奇门 · 据《奇门基础资料 2023版教》鸣法体系",
+                            "飞盘奇门 · 据《奇门鸣法》体系",
                             fontSize = 12.sp,
                             color = palette.gold,
                             textAlign = TextAlign.Center,

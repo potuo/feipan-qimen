@@ -216,7 +216,7 @@ fun AboutScreen() {
                 }
                 Spacer(modifier = Modifier.height(QimenDimens.spacingSm))
                 Text(
-                    "排盘规则依据《奇门基础资料 2023版教》（符头定元 / 值使门飞宫法 / 暗干支飞宫法）。",
+                    "排盘规则依据《奇门鸣法》（符头定元 / 值使门飞宫法 / 暗干支飞宫法）。",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

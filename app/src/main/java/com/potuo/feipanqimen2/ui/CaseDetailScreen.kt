@@ -7,6 +7,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,6 +22,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -42,8 +46,10 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import com.potuo.feipanqimen2.QimenShareImage
 import com.potuo.feipanqimen2.data.CaseEntity
+import com.potuo.feipanqimen2.data.CaseTags
 import com.potuo.feipanqimen2.log.LogManager
 import com.potuo.feipanqimen2.qimen.QimenConstants
+import com.potuo.feipanqimen2.qimen.QimenResult
 import com.potuo.feipanqimen2.ui.components.HuangLiCard
 import com.potuo.feipanqimen2.ui.components.MarkdownText
 import com.potuo.feipanqimen2.ui.components.QimenBoard
@@ -58,7 +64,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CaseDetailScreen(
     viewModel: MainViewModel,
@@ -69,10 +75,11 @@ fun CaseDetailScreen(
     var tags by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
     var feedback by remember { mutableStateOf("") }
+    var category by remember { mutableStateOf("") }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var huangLiExpanded by remember { mutableStateOf(false) }
     var selectedPalace by remember { mutableStateOf<Int?>(null) }
-    val result by viewModel.qimenResult.collectAsState()
+    var result by remember { mutableStateOf<QimenResult?>(null) }
 
     BackHandler(onBack = onBack)
 
@@ -83,7 +90,8 @@ fun CaseDetailScreen(
             tags = it.tags
             note = it.note
             feedback = it.feedback
-            viewModel.loadCase(it)
+            category = it.category
+            result = viewModel.deserializePan(it.panJson)
         }
     }
 
@@ -183,16 +191,34 @@ fun CaseDetailScreen(
                 )
             }
 
+            Text(
+                "事项分类",
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm)) {
+                CaseTags.read(context).forEach { tagName ->
+                    FilterChip(
+                        selected = category == tagName,
+                        onClick = { category = tagName },
+                        label = { Text(tagName) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        ),
+                    )
+                }
+            }
             OutlinedTextField(
                 value = tags,
                 onValueChange = { tags = it },
-                label = { Text("标签") },
+                label = { Text("占断/备注") },
                 modifier = Modifier.fillMaxWidth(),
             )
             OutlinedTextField(
                 value = note,
                 onValueChange = { note = it },
-                label = { Text("备注/占断") },
+                label = { Text("标题") },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3,
             )
@@ -253,7 +279,7 @@ fun CaseDetailScreen(
             }
 
             QimenButton(
-                onClick = { viewModel.updateCase(c, tags, note, feedback) },
+                onClick = { viewModel.updateCase(c, category, tags, note, feedback) },
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("保存修改") }
     }

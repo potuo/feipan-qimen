@@ -3,7 +3,7 @@ package com.potuo.feipanqimen2
 import com.potuo.feipanqimen2.qimen.QimenConstants
 
 /**
- * 奇门演卦（据《奇门基础资料 2023版教》第三卷·第十四章）。
+ * 奇门演卦（据《奇门鸣法》第三卷·第十四章）。
  *
  * 星门与八卦对应（教材原文）：
  *   天蓬↔休门↔坎、天任↔生门↔艮、天冲↔伤门↔震、天辅↔杜门↔巽、

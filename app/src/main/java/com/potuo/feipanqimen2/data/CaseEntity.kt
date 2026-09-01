@@ -15,7 +15,7 @@ data class CaseEntity(
     val dunType: String,
     val juNumber: Int,
     val panJson: String,
-    val category: String = "其他",
+    val category: String = "未分类",
     val tags: String = "",
     val note: String = "",
     val huangLi: String = "",

@@ -1,6 +1,7 @@
 package com.potuo.feipanqimen2.ui
 
 import android.content.Context
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -18,6 +19,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
@@ -35,6 +37,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.potuo.feipanqimen2.AiAssistant
+import com.potuo.feipanqimen2.data.CaseTags
 import com.potuo.feipanqimen2.ui.components.CollapsibleSection
 import com.potuo.feipanqimen2.ui.components.QimenButton
 import com.potuo.feipanqimen2.ui.theme.QimenDimens
@@ -236,6 +239,94 @@ fun SettingsScreen(
                         .fillMaxWidth()
                         .padding(top = QimenDimens.spacingSm),
                 ) { Text("导入案例") }
+            }
+
+            // ── 标签管理 ──
+            CollapsibleSection(title = "标签管理") {
+                var caseTags by remember { mutableStateOf(CaseTags.read(context)) }
+                var newTag by remember { mutableStateOf("") }
+                var editingIndex by remember { mutableStateOf<Int?>(null) }
+                var editText by remember { mutableStateOf("") }
+
+                Text(
+                    "案例事项标签，同步用于占断分类与案例库筛选",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                caseTags.forEachIndexed { idx, tag ->
+                    if (editingIndex == idx) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = QimenDimens.spacingSm),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            OutlinedTextField(
+                                value = editText,
+                                onValueChange = { editText = it },
+                                modifier = Modifier.weight(1f),
+                                singleLine = true,
+                            )
+                            TextButton(onClick = {
+                                val t = editText.trim()
+                                if (t.isNotEmpty()) {
+                                    val updated = caseTags.toMutableList().apply { set(idx, t) }
+                                    CaseTags.save(context, updated)
+                                    caseTags = CaseTags.read(context)
+                                }
+                                editingIndex = null
+                            }) { Text("保存") }
+                            TextButton(onClick = { editingIndex = null }) { Text("取消") }
+                        }
+                    } else {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = QimenDimens.spacingSm),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                tag,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.weight(1f),
+                            )
+                            TextButton(onClick = { editingIndex = idx; editText = tag }) { Text("改") }
+                            TextButton(onClick = {
+                                if (caseTags.size <= 1) {
+                                    Toast.makeText(context, "至少保留一个标签", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    CaseTags.save(context, caseTags.filterIndexed { i, _ -> i != idx })
+                                    caseTags = CaseTags.read(context)
+                                }
+                            }) { Text("删") }
+                        }
+                    }
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = QimenDimens.spacingSm),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    OutlinedTextField(
+                        value = newTag,
+                        onValueChange = { newTag = it },
+                        label = { Text("新标签名") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                    )
+                    QimenButton(
+                        onClick = {
+                            val t = newTag.trim()
+                            if (t.isNotEmpty() && t !in caseTags) {
+                                CaseTags.save(context, caseTags + t)
+                                caseTags = CaseTags.read(context)
+                                newTag = ""
+                            }
+                        },
+                        modifier = Modifier.padding(start = QimenDimens.spacingSm),
+                    ) { Text("添加") }
+                }
             }
         }
     }

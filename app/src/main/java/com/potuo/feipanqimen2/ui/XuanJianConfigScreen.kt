@@ -385,13 +385,30 @@ fun XuanJianConfigScreen(onBack: () -> Unit) {
                             Switch(
                                 checked = skill.enabled,
                                 onCheckedChange = { on ->
-                                    if (skill.builtin) {
-                                        AiAssistant.toggleBuiltinSkill(context, skill.name, on)
+                                    if (on) {
+                                        // 开启时限额：除「占断思维纪律」（locked）外，最多同时开 5 个
+                                        val enabledCount = skills.count { it.enabled && !it.locked }
+                                        if (enabledCount >= 5) {
+                                            Toast.makeText(context, "最多同时开启 5 个 skill（占断思维纪律不计入）", Toast.LENGTH_SHORT).show()
+                                            skills = AiAssistant.readSkills(context)
+                                        } else {
+                                            if (skill.builtin) {
+                                                AiAssistant.toggleBuiltinSkill(context, skill.name, true)
+                                            } else {
+                                                skills = skills.toMutableList().apply { set(index, skill.copy(enabled = true)) }
+                                                AiAssistant.saveSkills(context, skills)
+                                            }
+                                            skills = AiAssistant.readSkills(context)
+                                        }
                                     } else {
-                                        skills = skills.toMutableList().apply { set(index, skill.copy(enabled = on)) }
-                                        AiAssistant.saveSkills(context, skills)
+                                        if (skill.builtin) {
+                                            AiAssistant.toggleBuiltinSkill(context, skill.name, false)
+                                        } else {
+                                            skills = skills.toMutableList().apply { set(index, skill.copy(enabled = false)) }
+                                            AiAssistant.saveSkills(context, skills)
+                                        }
+                                        skills = AiAssistant.readSkills(context)
                                     }
-                                    skills = AiAssistant.readSkills(context)
                                 },
                             )
                         }

@@ -21,7 +21,8 @@ import com.potuo.feipanqimen2.ui.theme.LocalQimenPalette
 import com.potuo.feipanqimen2.ui.theme.QimenDimens
 
 /**
- * 单宫详解弹窗：点按盘面宫格后弹出，展示该宫的星/门/神释义（联动教材 vol2）＋ 奇仪/六亲/旺衰/暗干支/角标。
+ * 单宫详解弹窗：点按盘面宫格后弹出，展示该宫的星/门/神结构化释义
+ * （五行/宫位/吉凶/定义/象意，联动 PalaceRef 速查表）＋ 奇仪/六亲/旺衰/暗干支/角标/演卦。
  */
 @Composable
 fun PalaceDetailDialog(
@@ -43,16 +44,13 @@ fun PalaceDetailDialog(
         text = {
             Column {
                 // ── 星 ──
-                SectionLabel("星 · ${info.star}")
-                PalaceRef.lookup(context, info.star)?.let { Body(it) }
+                EntitySection("星", info.star, info.star)
 
                 // ── 门 ──
-                SectionLabel("门 · ${info.gate}门")
-                PalaceRef.lookup(context, info.gate)?.let { Body(it) }
+                EntitySection("门", info.gate, "${info.gate}门")
 
                 // ── 神 ──
-                SectionLabel("神 · ${info.god}")
-                PalaceRef.lookup(context, info.god)?.let { Body(it) }
+                EntitySection("神", info.god, info.god)
 
                 // ── 奇仪 / 六亲 / 旺衰 ──
                 SectionLabel("奇仪")
@@ -113,6 +111,44 @@ fun PalaceDetailDialog(
             }
         },
     )
+}
+
+/**
+ * 星/门/神结构化释义区块：五行·宫位·吉凶 + 定义 + 象意要点。
+ * 结构化速查表无数据时，回退到教材 vol2 原文。
+ */
+@Composable
+private fun EntitySection(label: String, name: String, displayName: String) {
+    val context = LocalContext.current
+    SectionLabel("$label · $displayName")
+    val meta = PalaceRef.info(name)
+    if (meta != null) {
+        Text(
+            "${meta.wuxing} · ${meta.gong} · ${meta.jixiong}",
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.primary,
+            lineHeight = 20.sp,
+            modifier = Modifier.padding(top = 2.dp),
+        )
+        Text(
+            meta.summary,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            lineHeight = 20.sp,
+            modifier = Modifier.padding(top = 2.dp),
+        )
+        meta.xiangyi.forEach { item ->
+            Text(
+                "· $item",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                lineHeight = 20.sp,
+            )
+        }
+    } else {
+        PalaceRef.lookup(context, name)?.let { Body(it) }
+    }
 }
 
 @Composable

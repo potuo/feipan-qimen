@@ -99,7 +99,7 @@ object QimenShareImage {
             170f,
             subPaint,
         )
-        canvas.drawText("据《奇门基础资料 2023版教》鸣法体系 · 值使飞宫法", WIDTH / 2f, 220f, subPaint)
+        canvas.drawText("据《奇门鸣法》体系 · 值使飞宫法", WIDTH / 2f, 220f, subPaint)
 
         // ── 盘面 ──
         val left = (WIDTH - boardSize) / 2f

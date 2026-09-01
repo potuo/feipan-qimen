@@ -90,7 +90,7 @@ fun InputScreen(viewModel: MainViewModel, onCalculate: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(QimenDimens.spacingLg),
     ) {
         Text(
-            "飞盘奇门排盘",
+            "鸣法飞盘起卦",
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center,
@@ -143,7 +143,8 @@ fun InputScreen(viewModel: MainViewModel, onCalculate: () -> Unit) {
         OutlinedTextField(
             value = note,
             onValueChange = viewModel::setNote,
-            label = { Text("备注/占断") },
+            label = { Text("标题") },
+            placeholder = { Text("留空默认「xx月xx日 阴/阳遁x局」") },
             modifier = Modifier.fillMaxWidth(),
             minLines = 2,
         )

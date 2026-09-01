@@ -28,8 +28,7 @@ data class FeedbackStat(
     val c: Int,
 )
 
-/** 案例事项类别选项（保存/筛选/统计共用） */
-val CASE_CATEGORIES = listOf("求财", "事业", "婚姻", "健康", "出行", "考试", "其他")
+
 
 class CaseRepository(private val dao: CaseDao) {
     private val gson = Gson()

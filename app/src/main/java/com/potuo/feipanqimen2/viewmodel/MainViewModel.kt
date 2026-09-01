@@ -57,7 +57,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _note = MutableStateFlow("")
     val note: StateFlow<String> = _note.asStateFlow()
 
-    private val _selectedCategory = MutableStateFlow("其他")
+    private val _selectedCategory = MutableStateFlow("未分类")
     val selectedCategory: StateFlow<String> = _selectedCategory.asStateFlow()
 
     private val _tags = MutableStateFlow("")
@@ -196,7 +196,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     panJson = repository.serializePan(result),
                     category = _selectedCategory.value,
                     tags = _tags.value,
-                    note = _note.value,
+                    note = _note.value.ifBlank {
+                        "${_selectedDate.value.monthValue}月${_selectedDate.value.dayOfMonth}日 ${result.dunType}${result.juNumber}局"
+                    },
                     huangLi = huangLi?.summary ?: "",
                     aiReading = buildString {
                         if (_aiReasoning.value.isNotBlank()) {
@@ -230,9 +232,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         } else null
     }
 
-    fun updateCase(case: CaseEntity, tags: String, note: String, feedback: String) {
+    fun updateCase(case: CaseEntity, category: String, tags: String, note: String, feedback: String) {
         viewModelScope.launch {
-            repository.update(case.copy(tags = tags, note = note, feedback = feedback))
+            repository.update(case.copy(category = category, tags = tags, note = note, feedback = feedback))
             _message.value = "已保存"
         }
     }
@@ -245,6 +247,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     suspend fun getCaseById(id: Long): CaseEntity? = repository.getCaseById(id)
+
+    /** 反序列化盘面（不污染排盘状态，供案例详情独立展示） */
+    fun deserializePan(json: String): QimenResult = repository.deserializePan(json)
 
     fun exportAll(uri: Uri) {
         viewModelScope.launch {

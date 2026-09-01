@@ -77,6 +77,7 @@ private val VOLUMES = listOf(
     VolumeInfo("第一卷 · 数术基础", "vol1.txt", "河图洛书（含原图）/ 先后天八卦 / 八卦万物类象 / 阴阳五行 / 天干地支 / 六十甲子 / 二十四节气"),
     VolumeInfo("第二卷 · 奇门排盘", "vol2.txt", "排列四柱 / 定阴阳局 / 布地盘天盘 / 九神九星八门 / 暗干支 / 置闰拆补（含排盘案例图）"),
     VolumeInfo("第三卷 · 占断法则", "vol3.txt", "六仪击刑 / 正格辅格 / 守门九遁 / 三诈五假 / 六亲断法 / 星门八卦对应"),
+    VolumeInfo("第四卷 · 分类占断", "vol4.txt", "取用神通则 / 射覆 / 寻失物 / 求财 / 婚姻 / 疾病 / 出行 / 考试 / 官讼 / 行人 / 胎产 / 占天气"),
 )
 
 /** 教材轻量 Markdown 渲染已抽到 ui/components/MarkdownText.kt（MdBlock/parseMd/BlockItem 公共复用） */
@@ -289,7 +290,7 @@ private fun ReaderView(vol: VolumeInfo, onBack: () -> Unit) {
     }
 }
 
-/** 飞盘总纲：教材《奇门基础资料 2023版教》分卷阅读（md 排版 + 原图 + 目录/搜索/位置记忆） */
+/** 飞盘总纲：教材《奇门鸣法》分卷阅读（md 排版 + 原图 + 目录/搜索/位置记忆） */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LearnScreen() {
@@ -303,7 +304,7 @@ fun LearnScreen() {
             verticalArrangement = Arrangement.spacedBy(QimenDimens.spacingMd),
         ) {
             Text(
-                "据《奇门基础资料 2023版教》鸣法体系",
+                "据《奇门鸣法》体系",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
             )
