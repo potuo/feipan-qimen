@@ -17,6 +17,8 @@ data class AiConfig(
     val baseUrl: String = "",
     val model: String = "",
     val apiKey: String = "",
+    val thinkingEnabled: Boolean = true,
+    val thinkingLevel: String = "high",
 )
 
 /**
@@ -43,14 +45,46 @@ data class AiResult(
  */
 object AiAssistant {
 
-    /** 预设供应商：每个供应商带多个可选模型。supportsThinking=是否支持思考过程 */
-    data class Provider(val name: String, val baseUrl: String, val models: List<String>, val supportsThinking: Boolean = false)
+    /** 各模型的「思考」请求方案（依据各官网） */
+    enum class ThinkingStyle {
+        NONE,               // 不支持思考（自定义供应商）
+        REASONING_EFFORT,   // DeepSeek V4 / Kimi K3：顶层 reasoning_effort（low/high/max）
+        ENABLE_THINKING,    // 通义千问 Qwen3：enable_thinking（true/false）
+        THINKING_TYPE,      // 小米 MiMo V2.5：thinking.type（enabled/disabled）
+    }
+
+    /** 预设供应商：每个供应商带多个可选模型 + 思考方案 */
+    data class Provider(
+        val name: String,
+        val baseUrl: String,
+        val models: List<String>,
+        val thinkingStyle: ThinkingStyle = ThinkingStyle.NONE,
+        val thinkingLevels: List<String> = emptyList(),
+    )
 
     val PROVIDERS = listOf(
-        Provider("DeepSeek", "https://api.deepseek.com", listOf("deepseek-chat", "deepseek-reasoner"), supportsThinking = false),
-        Provider("Kimi", "https://api.moonshot.cn/v1", listOf("moonshot-v1-8k", "moonshot-v1-32k", "moonshot-v1-128k"), supportsThinking = true),
-        Provider("通义千问", "https://dashscope.aliyuncs.com/compatible-mode/v1", listOf("qwen-plus", "qwen-turbo", "qwen-max"), supportsThinking = false),
-        Provider("小米 MiMo", "https://api.xiaomimimo.com/v1", listOf("mimo-v2.5-pro", "mimo-v2.5", "mimo-v2-flash", "mimo-v2-omni"), supportsThinking = true),
+        Provider(
+            "DeepSeek", "https://api.deepseek.com",
+            listOf("deepseek-v4-flash", "deepseek-v4-pro"),
+            thinkingStyle = ThinkingStyle.REASONING_EFFORT,
+            thinkingLevels = listOf("low", "high", "max"),
+        ),
+        Provider(
+            "Kimi", "https://api.moonshot.cn/v1",
+            listOf("kimi-k3", "kimi-k2.6"),
+            thinkingStyle = ThinkingStyle.REASONING_EFFORT,
+            thinkingLevels = listOf("low", "high", "max"),
+        ),
+        Provider(
+            "通义千问", "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            listOf("qwen-max", "qwen-plus", "qwen-turbo"),
+            thinkingStyle = ThinkingStyle.ENABLE_THINKING,
+        ),
+        Provider(
+            "小米 MiMo", "https://api.xiaomimimo.com/v1",
+            listOf("mimo-v2.5-pro", "mimo-v2.5"),
+            thinkingStyle = ThinkingStyle.THINKING_TYPE,
+        ),
     )
     const val CUSTOM = "自定义"
 
@@ -74,6 +108,8 @@ object AiAssistant {
             baseUrl = p.getString("ai_base_url", preset?.baseUrl ?: "") ?: "",
             model = p.getString("ai_model", preset?.models?.firstOrNull() ?: "") ?: "",
             apiKey = p.getString("ai_api_key", "") ?: "",
+            thinkingEnabled = p.getBoolean("ai_thinking_enabled", true),
+            thinkingLevel = p.getString("ai_thinking_level", "high") ?: "high",
         )
     }
 
@@ -84,6 +120,8 @@ object AiAssistant {
             .putString("ai_base_url", config.baseUrl)
             .putString("ai_model", config.model)
             .putString("ai_api_key", config.apiKey)
+            .putBoolean("ai_thinking_enabled", config.thinkingEnabled)
+            .putString("ai_thinking_level", config.thinkingLevel)
             .apply()
     }
 
@@ -131,6 +169,17 @@ object AiAssistant {
             .apply()
     }
 
+    /** 按供应商的思考方案构造思考参数（返回 null = 不加） */
+    private fun thinkingBody(config: AiConfig, preset: Provider?): Any? {
+        if (!config.thinkingEnabled) return null
+        return when (preset?.thinkingStyle) {
+            ThinkingStyle.REASONING_EFFORT -> config.thinkingLevel
+            ThinkingStyle.ENABLE_THINKING -> true
+            ThinkingStyle.THINKING_TYPE -> JSONObject().put("type", "enabled")
+            else -> null
+        }
+    }
+
     /** 调玄鉴断局：喂盘面 JSON + 用户情况 + 开启的 skill，返回思考过程 + 参考性意见 */
     suspend fun ask(context: Context, panJson: String, situation: String): Result<AiResult> =
         withContext(Dispatchers.IO) {
@@ -157,8 +206,11 @@ object AiAssistant {
                 val body = JSONObject().apply {
                     put("model", config.model)
                     put("temperature", 0.4)
-                    if (preset?.supportsThinking == true) {
-                        put("thinking", JSONObject().put("type", "enabled"))
+                    when (val t = thinkingBody(config, preset)) {
+                        null -> {}
+                        is String -> put("reasoning_effort", t)
+                        is Boolean -> put("enable_thinking", t)
+                        is JSONObject -> put("thinking", t)
                     }
                     put("messages", JSONArray().apply {
                         put(JSONObject().put("role", "system").put("content", systemContent))
@@ -186,6 +238,48 @@ object AiAssistant {
                 val reasoning = message.optString("reasoning_content").trim()
                 if (content.isBlank()) return@runCatching AiResult(reasoning, "AI 返回为空，请重试")
                 AiResult(reasoning, content)
+            }
+        }
+
+    /** 测试当前配置的模型是否可用（发一个极简请求，不涉及盘面） */
+    suspend fun test(context: Context): Result<String> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val config = readConfig(context)
+                if (!config.enabled) throw IllegalStateException("玄鉴未开启")
+                if (config.apiKey.isBlank()) throw IllegalStateException("未填写 API Key")
+                if (config.baseUrl.isBlank()) throw IllegalStateException("未配置接口地址")
+
+                val endpoint = config.baseUrl.trimEnd('/') + "/chat/completions"
+                val preset = PROVIDERS.firstOrNull { it.name == config.provider }
+                val body = JSONObject().apply {
+                    put("model", config.model)
+                    put("max_tokens", 16)
+                    when (val t = thinkingBody(config, preset)) {
+                        null -> {}
+                        is String -> put("reasoning_effort", t)
+                        is Boolean -> put("enable_thinking", t)
+                        is JSONObject -> put("thinking", t)
+                    }
+                    put("messages", JSONArray().apply {
+                        put(JSONObject().put("role", "user").put("content", "回复「测试成功」四个字"))
+                    })
+                }
+
+                val conn = URL(endpoint).openConnection() as HttpURLConnection
+                conn.connectTimeout = 20000
+                conn.readTimeout = 30000
+                conn.requestMethod = "POST"
+                conn.setRequestProperty("Content-Type", "application/json")
+                conn.setRequestProperty("Authorization", "Bearer ${config.apiKey}")
+                conn.doOutput = true
+                conn.outputStream.use { it.write(body.toString().toByteArray(Charsets.UTF_8)) }
+
+                if (conn.responseCode != 200) {
+                    val err = conn.errorStream?.bufferedReader()?.use { it.readText() } ?: ""
+                    throw IllegalStateException("测试失败（${conn.responseCode}）：${err.take(200)}")
+                }
+                "测试成功"
             }
         }
 }

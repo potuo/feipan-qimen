@@ -1,5 +1,5 @@
 {
-  "version": "4.2.0",
-  "apk_url": "https://gitee.com/potuo/feipan-qimen/releases/download/v4.2.0/app-debug.apk",
-  "notes": "玄鉴配置双候选框 + 思考强调色随主题 + 案例玄鉴解读 Markdown"
+  "version": "4.3.0",
+  "apk_url": "https://gitee.com/potuo/feipan-qimen/releases/download/v4.3.0/app-debug.apk",
+  "notes": "日志系统升级 + 玄鉴模型更新 + 思考开关/强度 + 模型测试"
 }

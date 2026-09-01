@@ -9,11 +9,13 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,14 +24,20 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -47,11 +55,13 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import com.potuo.feipanqimen2.ChangelogEntry
 import com.potuo.feipanqimen2.NoticeInfo
 import com.potuo.feipanqimen2.R
@@ -90,6 +100,7 @@ fun AboutScreen() {
 
     // ── 应用日志状态 ──
     var logSizeKB by remember { mutableLongStateOf(LogManager.totalSizeKB(context)) }
+    var showLogViewer by remember { mutableStateOf(false) }
 
     // ── 更新日志状态（联网拉取 + 本地缓存兜底）──
     var changelog by remember { mutableStateOf<List<ChangelogEntry>?>(null) }
@@ -363,6 +374,12 @@ fun AboutScreen() {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             QimenButton(
+                onClick = { showLogViewer = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = QimenDimens.spacingSm),
+            ) { Text("查看日志") }
+            QimenButton(
                 onClick = {
                     val date = java.text.SimpleDateFormat("yyyyMMdd", java.util.Locale.CHINA)
                         .format(java.util.Date())
@@ -382,6 +399,10 @@ fun AboutScreen() {
                     .fillMaxWidth()
                     .padding(top = QimenDimens.spacingSm),
             ) { Text("清空日志") }
+        }
+
+        if (showLogViewer) {
+            LogViewerDialog(onDismiss = { showLogViewer = false })
         }
 
         // ── 更新日志（联网拉取）──
@@ -497,6 +518,83 @@ private fun GithubAvatar(url: String, size: androidx.compose.ui.unit.Dp) {
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
+    }
+}
+
+/** 日志查看器：分天列表 + 关键词搜索 + 内容浏览 */
+@Composable
+private fun LogViewerDialog(onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val files = remember { LogManager.listLogFiles(context) }
+    var selectedFile by remember { mutableStateOf(files.firstOrNull()?.name ?: "") }
+    var query by remember { mutableStateOf("") }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.9f),
+            shape = RoundedCornerShape(QimenDimens.radiusMd),
+            color = MaterialTheme.colorScheme.surface,
+        ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(QimenDimens.spacingMd),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "查看日志",
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.weight(1f),
+                    )
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = "关闭")
+                    }
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = QimenDimens.spacingMd),
+                    horizontalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm),
+                ) {
+                    files.forEach { f ->
+                        val day = f.name.removePrefix("app_").removeSuffix(".log")
+                        FilterChip(
+                            selected = f.name == selectedFile,
+                            onClick = { selectedFile = f.name },
+                            label = { Text(day) },
+                        )
+                    }
+                }
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    label = { Text("搜索关键词") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = QimenDimens.spacingMd, vertical = QimenDimens.spacingSm),
+                    singleLine = true,
+                )
+                val content = remember(selectedFile) { LogManager.readLogFile(context, selectedFile) }
+                val filtered = if (query.isBlank()) content else {
+                    content.lineSequence().filter { it.contains(query) }.joinToString("\n")
+                }
+                Text(
+                    filtered.ifBlank { "（暂无日志）" },
+                    style = MaterialTheme.typography.bodySmall,
+                    fontFamily = FontFamily.Monospace,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = QimenDimens.spacingMd)
+                        .padding(bottom = QimenDimens.spacingLg),
+                )
+            }
         }
     }
 }

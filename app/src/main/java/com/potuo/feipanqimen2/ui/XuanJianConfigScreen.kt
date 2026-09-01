@@ -2,6 +2,7 @@ package com.potuo.feipanqimen2.ui
 
 import android.content.Context
 import android.provider.OpenableColumns
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -21,6 +22,7 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -32,6 +34,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,6 +50,7 @@ import com.potuo.feipanqimen2.ui.components.QimenCard
 import com.potuo.feipanqimen2.ui.components.QimenDialog
 import com.potuo.feipanqimen2.ui.components.QimenOutlinedButton
 import com.potuo.feipanqimen2.ui.theme.QimenDimens
+import kotlinx.coroutines.launch
 
 /** 从 Uri 读取文本内容 */
 private fun readTextFromUri(context: Context, uri: android.net.Uri): String =
@@ -77,6 +81,9 @@ fun XuanJianConfigScreen(onBack: () -> Unit) {
     var skills by remember { mutableStateOf(AiAssistant.readSkills(context)) }
     var pendingSkillContent by remember { mutableStateOf<String?>(null) }
     var newSkillName by remember { mutableStateOf("") }
+    var showThinkingWarn by remember { mutableStateOf(false) }
+    var testing by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     val importSkillLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument(),
@@ -123,10 +130,12 @@ fun XuanJianConfigScreen(onBack: () -> Unit) {
                                 text = { Text(name) },
                                 onClick = {
                                     val preset = AiAssistant.PROVIDERS.firstOrNull { it.name == name }
+                                    val supports = preset != null && preset.thinkingStyle != AiAssistant.ThinkingStyle.NONE
                                     aiConfig = aiConfig.copy(
                                         provider = name,
                                         baseUrl = preset?.baseUrl ?: aiConfig.baseUrl,
                                         model = preset?.models?.firstOrNull() ?: aiConfig.model,
+                                        thinkingEnabled = if (supports) aiConfig.thinkingEnabled else false,
                                     )
                                     AiAssistant.saveConfig(context, aiConfig)
                                     providerMenu = false
@@ -189,6 +198,59 @@ fun XuanJianConfigScreen(onBack: () -> Unit) {
                 )
             }
 
+            // ── 思考模式 ──
+            val preset = AiAssistant.PROVIDERS.firstOrNull { it.name == aiConfig.provider }
+            val thinkingSupported = preset != null && preset.thinkingStyle != AiAssistant.ThinkingStyle.NONE
+            HorizontalDivider(modifier = Modifier.padding(vertical = QimenDimens.spacingSm))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "思考模式",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                Switch(
+                    checked = aiConfig.thinkingEnabled,
+                    onCheckedChange = { on ->
+                        if (on && !thinkingSupported) {
+                            showThinkingWarn = true
+                        } else {
+                            aiConfig = aiConfig.copy(thinkingEnabled = on)
+                            AiAssistant.saveConfig(context, aiConfig)
+                        }
+                    },
+                )
+            }
+            if (!thinkingSupported) {
+                Text(
+                    "当前模型不支持思考过程",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else if (aiConfig.thinkingEnabled && preset.thinkingLevels.isNotEmpty()) {
+                Text(
+                    "思考强度",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = QimenDimens.spacingXs),
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm)) {
+                    preset.thinkingLevels.forEach { level ->
+                        FilterChip(
+                            selected = aiConfig.thinkingLevel == level,
+                            onClick = {
+                                aiConfig = aiConfig.copy(thinkingLevel = level)
+                                AiAssistant.saveConfig(context, aiConfig)
+                            },
+                            label = { Text(level) },
+                        )
+                    }
+                }
+            }
+
             OutlinedTextField(
                 value = aiConfig.apiKey,
                 onValueChange = { v ->
@@ -206,6 +268,21 @@ fun XuanJianConfigScreen(onBack: () -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = QimenDimens.spacingXs),
             )
+            QimenOutlinedButton(
+                onClick = {
+                    if (testing) return@QimenOutlinedButton
+                    scope.launch {
+                        testing = true
+                        val result = AiAssistant.test(context)
+                        testing = false
+                        val msg = result.getOrElse { it.message ?: "未知错误" }
+                        Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = QimenDimens.spacingSm),
+            ) { Text(if (testing) "测试中…" else "测试模型") }
         }
 
         // ── 资料 skill ──
@@ -304,6 +381,18 @@ fun XuanJianConfigScreen(onBack: () -> Unit) {
             onClick = onBack,
             modifier = Modifier.fillMaxWidth(),
         ) { Text("返回") }
+    }
+
+    // ── 思考警告弹窗 ──
+    if (showThinkingWarn) {
+        QimenDialog(
+            onDismissRequest = { showThinkingWarn = false },
+            title = "不支持思考",
+            text = { Text("当前模型不支持思考过程，无法开启。") },
+            confirmText = "知道了",
+            onConfirm = { showThinkingWarn = false },
+            dismissText = null,
+        )
     }
 
     // ── 导入 skill 弹窗 ──

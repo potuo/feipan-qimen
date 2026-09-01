@@ -127,6 +127,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             _aiLoading.value = true
             _aiElapsed.value = 0
+            val config = AiAssistant.readConfig(getApplication())
+            val start = System.currentTimeMillis()
+            LogManager.log("玄鉴", "开始请求：${config.provider} / ${config.model}")
             val timerJob = launch {
                 while (isActive) {
                     delay(1000)
@@ -135,12 +138,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
             AiAssistant.ask(getApplication(), panJson, situation)
                 .onSuccess {
+                    val elapsed = System.currentTimeMillis() - start
                     _aiReasoning.value = it.reasoning
                     _aiReading.value = it.content
+                    LogManager.log("玄鉴", "请求成功：${elapsed}ms，结论 ${it.content.length} 字，思考 ${it.reasoning.length} 字")
                 }
                 .onFailure {
+                    val elapsed = System.currentTimeMillis() - start
                     _aiReasoning.value = ""
                     _aiReading.value = "AI 请求失败：${it.message}"
+                    LogManager.e("玄鉴", "请求失败：${elapsed}ms，${it.message}")
                 }
             timerJob.cancel()
             _aiLoading.value = false
@@ -249,6 +256,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 } ?: throw IllegalStateException("无法写入文件")
                 _message.value = "已导出 ${cases.size} 条案例"
             }.onFailure {
+                LogManager.logException("导出案例", it)
                 _message.value = "导出失败：${it.message}"
             }
         }
@@ -263,6 +271,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 } ?: throw IllegalStateException("无法写入文件")
                 _message.value = "已导出案例"
             }.onFailure {
+                LogManager.logException("导出案例", it)
                 _message.value = "导出失败：${it.message}"
             }
         }
@@ -277,6 +286,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val count = repository.importCases(json).getOrThrow()
                 _message.value = "导入成功 $count 条"
             }.onFailure {
+                LogManager.logException("导入案例", it)
                 _message.value = "导入失败：${it.message}"
             }
         }

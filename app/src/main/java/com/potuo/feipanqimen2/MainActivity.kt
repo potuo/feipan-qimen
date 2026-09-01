@@ -127,6 +127,7 @@ class MainActivity : ComponentActivity() {
         LogManager.init(this)
         val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            LogManager.recordCrash(this)
             LogManager.logException("未捕获异常@${thread.name}", throwable)
             defaultHandler?.uncaughtException(thread, throwable)
         }
@@ -180,6 +181,7 @@ fun MainApp(
     var downloading by remember { mutableStateOf(false) }
     var downloadProgress by remember { mutableStateOf(0f) }
     var changelogDialog by remember { mutableStateOf<ChangelogDialogState?>(null) }
+    var showCrashNotice by remember { mutableStateOf(LogManager.crashCount(context) > 0) }
 
     LaunchedEffect(message) {
         message?.let {
@@ -225,6 +227,27 @@ fun MainApp(
     if (showSplash) {
         SplashScreen()
         return
+    }
+
+    if (showCrashNotice) {
+        QimenDialog(
+            onDismissRequest = {},
+            title = "检测到上次闪退",
+            text = {
+                Text("应用上次运行时异常退出。可到「关于 → 应用日志 → 查看日志」查看崩溃记录。")
+            },
+            confirmText = "知道了",
+            onConfirm = {
+                LogManager.clearCrashCount(context)
+                showCrashNotice = false
+            },
+            dismissText = "去查看",
+            onDismiss = {
+                section = Section.ABOUT
+                LogManager.clearCrashCount(context)
+                showCrashNotice = false
+            },
+        )
     }
 
     val inDetail = detailCaseId != null

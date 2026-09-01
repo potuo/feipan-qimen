@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import com.potuo.feipanqimen2.AiAssistant
+import com.potuo.feipanqimen2.log.LogManager
 import com.potuo.feipanqimen2.PatternBook
 import com.potuo.feipanqimen2.QimenShareImage
 import com.potuo.feipanqimen2.data.CASE_CATEGORIES
@@ -293,6 +294,7 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                             }
                             context.startActivity(Intent.createChooser(intent, "分享盘面"))
                         }.onFailure { e ->
+                            LogManager.logException("分享图", e)
                             Toast.makeText(context, "生成分享图失败：${e.message}", Toast.LENGTH_SHORT).show()
                         }
                     }
@@ -328,6 +330,16 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                     Text("玄鉴参断")
                 }
             }
+
+            Text(
+                "玄鉴推理过程与 skill 知识库数量、模型推理能力及思考强度相关，可在玄鉴配置中调整。",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = QimenDimens.spacingSm),
+            )
 
             if (aiReading.isNotBlank()) {
                 QimenCard(accentBar = true) {

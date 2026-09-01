@@ -5,6 +5,7 @@ import android.content.Intent
 import androidx.core.content.FileProvider
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import com.potuo.feipanqimen2.log.LogManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -90,6 +91,7 @@ object UpdateChecker {
                 if (compareVersions(info.version, localVersion) > 0) return@withContext info
             }
         }
+        if (last == null) LogManager.w("更新", "所有更新源均失败（Gitee/GitHub/jsDelivr/raw）")
         last
     }
 

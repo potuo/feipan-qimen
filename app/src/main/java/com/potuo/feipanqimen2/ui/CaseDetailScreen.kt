@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import com.potuo.feipanqimen2.QimenShareImage
 import com.potuo.feipanqimen2.data.CaseEntity
+import com.potuo.feipanqimen2.log.LogManager
 import com.potuo.feipanqimen2.qimen.QimenConstants
 import com.potuo.feipanqimen2.ui.components.HuangLiCard
 import com.potuo.feipanqimen2.ui.components.MarkdownText
@@ -130,6 +131,7 @@ fun CaseDetailScreen(
                         }
                         context.startActivity(Intent.createChooser(intent, "分享盘面"))
                     }.onFailure { e ->
+                        LogManager.logException("分享图", e)
                         Toast.makeText(context, "生成分享图失败：${e.message}", Toast.LENGTH_SHORT).show()
                     }
                 }
