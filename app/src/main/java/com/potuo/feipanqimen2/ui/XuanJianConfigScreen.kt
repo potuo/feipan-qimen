@@ -44,6 +44,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.potuo.feipanqimen2.AiAssistant
+import com.potuo.feipanqimen2.ApiKeyEntry
 import com.potuo.feipanqimen2.XuanJianSkill
 import com.potuo.feipanqimen2.ui.components.QimenButton
 import com.potuo.feipanqimen2.ui.components.QimenCard
@@ -83,6 +84,10 @@ fun XuanJianConfigScreen(onBack: () -> Unit) {
     var newSkillName by remember { mutableStateOf("") }
     var showThinkingWarn by remember { mutableStateOf(false) }
     var testing by remember { mutableStateOf(false) }
+    var apiKeys by remember { mutableStateOf(AiAssistant.readApiKeys(context)) }
+    var showAddKeyDialog by remember { mutableStateOf(false) }
+    var newKeyName by remember { mutableStateOf("") }
+    var newKeyValue by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
 
     val importSkillLauncher = rememberLauncherForActivityResult(
@@ -251,17 +256,54 @@ fun XuanJianConfigScreen(onBack: () -> Unit) {
                 }
             }
 
-            OutlinedTextField(
-                value = aiConfig.apiKey,
-                onValueChange = { v ->
-                    aiConfig = aiConfig.copy(apiKey = v)
-                    AiAssistant.saveConfig(context, aiConfig)
-                },
-                label = { Text("API Key") },
-                modifier = Modifier.fillMaxWidth().padding(top = QimenDimens.spacingSm),
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-            )
+            // API Key 存档选择
+            Box {
+                var keyMenu by remember { mutableStateOf(false) }
+                OutlinedButton(
+                    onClick = { keyMenu = true },
+                    modifier = Modifier.fillMaxWidth().padding(top = QimenDimens.spacingSm),
+                ) {
+                    Text(aiConfig.apiKeyName.ifBlank { "选择 Key 存档" }, maxLines = 1, modifier = Modifier.weight(1f))
+                    Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                }
+                DropdownMenu(expanded = keyMenu, onDismissRequest = { keyMenu = false }) {
+                    if (apiKeys.isEmpty()) {
+                        DropdownMenuItem(text = { Text("暂无存档，点「新建 Key」") }, onClick = { keyMenu = false })
+                    } else {
+                        apiKeys.forEach { entry ->
+                            DropdownMenuItem(text = { Text(entry.name) }, onClick = {
+                                aiConfig = aiConfig.copy(apiKey = entry.key, apiKeyName = entry.name)
+                                AiAssistant.saveConfig(context, aiConfig)
+                                keyMenu = false
+                            })
+                        }
+                    }
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm)) {
+                QimenOutlinedButton(
+                    onClick = {
+                        if (apiKeys.size >= 10) {
+                            Toast.makeText(context, "最多保存 10 个 Key 存档", Toast.LENGTH_SHORT).show()
+                        } else {
+                            showAddKeyDialog = true
+                        }
+                    },
+                    modifier = Modifier.weight(1f).padding(top = QimenDimens.spacingSm),
+                ) { Text("新建 Key") }
+                QimenOutlinedButton(
+                    onClick = {
+                        if (aiConfig.apiKeyName.isNotBlank()) {
+                            val updated = apiKeys.filterNot { it.name == aiConfig.apiKeyName }
+                            AiAssistant.saveApiKeys(context, updated)
+                            apiKeys = updated
+                            aiConfig = aiConfig.copy(apiKey = "", apiKeyName = "")
+                            AiAssistant.saveConfig(context, aiConfig)
+                        }
+                    },
+                    modifier = Modifier.weight(1f).padding(top = QimenDimens.spacingSm),
+                ) { Text("删除") }
+            }
             Text(
                 "Key 仅存本机不上传。",
                 style = MaterialTheme.typography.bodySmall,
@@ -392,6 +434,50 @@ fun XuanJianConfigScreen(onBack: () -> Unit) {
             confirmText = "知道了",
             onConfirm = { showThinkingWarn = false },
             dismissText = null,
+        )
+    }
+
+    // ── 新建 API Key 弹窗 ──
+    if (showAddKeyDialog) {
+        QimenDialog(
+            onDismissRequest = { showAddKeyDialog = false },
+            title = "新建 API Key 存档",
+            confirmText = "保存",
+            onConfirm = {
+                val name = newKeyName.trim()
+                val value = newKeyValue.trim()
+                if (name.isNotBlank() && value.isNotBlank() && apiKeys.size < 10) {
+                    val updated = apiKeys + ApiKeyEntry(name, value)
+                    AiAssistant.saveApiKeys(context, updated)
+                    apiKeys = updated
+                    aiConfig = aiConfig.copy(apiKey = value, apiKeyName = name)
+                    AiAssistant.saveConfig(context, aiConfig)
+                }
+                showAddKeyDialog = false
+                newKeyName = ""
+                newKeyValue = ""
+            },
+            dismissText = "取消",
+            onDismiss = { showAddKeyDialog = false },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = newKeyName,
+                        onValueChange = { newKeyName = it },
+                        label = { Text("名称（如：我的 MiMo）") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                    )
+                    OutlinedTextField(
+                        value = newKeyValue,
+                        onValueChange = { newKeyValue = it },
+                        label = { Text("API Key") },
+                        modifier = Modifier.fillMaxWidth().padding(top = QimenDimens.spacingSm),
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                    )
+                }
+            },
         )
     }
 

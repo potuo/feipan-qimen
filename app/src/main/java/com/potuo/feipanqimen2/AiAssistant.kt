@@ -17,9 +17,13 @@ data class AiConfig(
     val baseUrl: String = "",
     val model: String = "",
     val apiKey: String = "",
+    val apiKeyName: String = "",
     val thinkingEnabled: Boolean = true,
     val thinkingLevel: String = "high",
 )
+
+/** API Key 存档：自定义名称 + Key（最多 10 个） */
+data class ApiKeyEntry(val name: String, val key: String)
 
 /**
  * 玄鉴 skill（喂给 AI 的资料）。
@@ -83,12 +87,13 @@ object AiAssistant {
         Provider(
             "小米 MiMo", "https://api.xiaomimimo.com/v1",
             listOf("mimo-v2.5-pro", "mimo-v2.5"),
-            thinkingStyle = ThinkingStyle.THINKING_TYPE,
+            thinkingStyle = ThinkingStyle.NONE,
         ),
     )
     const val CUSTOM = "自定义"
 
     private const val SKILLS_KEY = "xuanjian_user_skills"
+    private const val API_KEYS_KEY = "xuanjian_api_keys"
 
     /** 内置 skill 元数据（内容从 assets/xuanjian/ 读，写入仓库） */
     private data class BuiltinSpec(val asset: String, val name: String, val locked: Boolean)
@@ -108,6 +113,7 @@ object AiAssistant {
             baseUrl = p.getString("ai_base_url", preset?.baseUrl ?: "") ?: "",
             model = p.getString("ai_model", preset?.models?.firstOrNull() ?: "") ?: "",
             apiKey = p.getString("ai_api_key", "") ?: "",
+            apiKeyName = p.getString("ai_api_key_name", "") ?: "",
             thinkingEnabled = p.getBoolean("ai_thinking_enabled", true),
             thinkingLevel = p.getString("ai_thinking_level", "high") ?: "high",
         )
@@ -120,6 +126,7 @@ object AiAssistant {
             .putString("ai_base_url", config.baseUrl)
             .putString("ai_model", config.model)
             .putString("ai_api_key", config.apiKey)
+            .putString("ai_api_key_name", config.apiKeyName)
             .putBoolean("ai_thinking_enabled", config.thinkingEnabled)
             .putString("ai_thinking_level", config.thinkingLevel)
             .apply()
@@ -166,6 +173,23 @@ object AiAssistant {
     fun toggleBuiltinSkill(context: Context, name: String, enabled: Boolean) {
         context.getSharedPreferences("app_settings", Context.MODE_PRIVATE).edit()
             .putBoolean("builtin_enabled_$name", enabled)
+            .apply()
+    }
+
+    /** 读取 API Key 存档列表 */
+    fun readApiKeys(context: Context): List<ApiKeyEntry> {
+        val p = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
+        val json = p.getString(API_KEYS_KEY, null) ?: return emptyList()
+        return runCatching {
+            val type = object : TypeToken<List<ApiKeyEntry>>() {}.type
+            Gson().fromJson<List<ApiKeyEntry>>(json, type)
+        }.getOrDefault(emptyList())
+    }
+
+    /** 保存 API Key 存档（最多 10 个） */
+    fun saveApiKeys(context: Context, keys: List<ApiKeyEntry>) {
+        context.getSharedPreferences("app_settings", Context.MODE_PRIVATE).edit()
+            .putString(API_KEYS_KEY, Gson().toJson(keys.take(10)))
             .apply()
     }
 
