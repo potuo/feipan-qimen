@@ -21,4 +21,6 @@ data class CaseEntity(
     val huangLi: String = "",
     val feedback: String = "",
     val aiReading: String = "",
+    /** 用户输入给玄鉴的提示词（所问情况），与 aiReading（玄鉴输出）分离 */
+    val aiPrompt: String = "",
 )

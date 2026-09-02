@@ -146,7 +146,7 @@ fun InputScreen(viewModel: MainViewModel, onCalculate: () -> Unit) {
             label = { Text("标题") },
             placeholder = { Text("留空默认「xx月xx日 阴/阳遁x局」") },
             modifier = Modifier.fillMaxWidth(),
-            minLines = 2,
+            minLines = 1,
         )
 
         Spacer(modifier = Modifier.height(QimenDimens.spacingSm))

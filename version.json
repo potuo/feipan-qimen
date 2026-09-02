@@ -1,5 +1,5 @@
 {
-  "version": "4.5.1",
+  "version": "4.5.2",
   "apk_url": "https://gitee.com/potuo/feipan-qimen/releases/download/v4.5.1/app-debug.apk",
-  "notes": "修复主页更新下载后无法自动安装 + 更新按钮换行"
+  "notes": "输入框高度互换（标题矮/占断高）+ 案例保存玄鉴所问提示词"
 }

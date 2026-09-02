@@ -87,6 +87,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _aiReasoning = MutableStateFlow("")
     val aiReasoning: StateFlow<String> = _aiReasoning.asStateFlow()
 
+    /** 最近一次玄鉴参断时用户输入的提示词（所问情况，随案例保存） */
+    private val _aiPrompt = MutableStateFlow("")
+    val aiPrompt: StateFlow<String> = _aiPrompt.asStateFlow()
+
     private val _aiLoading = MutableStateFlow(false)
     val aiLoading: StateFlow<Boolean> = _aiLoading.asStateFlow()
 
@@ -125,6 +129,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val result = _qimenResult.value ?: return
         val panJson = repository.serializePan(result)
         viewModelScope.launch {
+            _aiPrompt.value = situation
             _aiLoading.value = true
             _aiElapsed.value = 0
             val config = AiAssistant.readConfig(getApplication())
@@ -157,6 +162,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun clearAiReading() {
         _aiReading.value = ""
         _aiReasoning.value = ""
+        _aiPrompt.value = ""
     }
 
     fun calculate() {
@@ -169,6 +175,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             // 盘面已变（新起盘或切时辰），清空上一局的 AI 断局结果
             _aiReading.value = ""
             _aiReasoning.value = ""
+            _aiPrompt.value = ""
             val r = _qimenResult.value
             LogManager.log(
                 "排盘",
@@ -200,6 +207,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         "${_selectedDate.value.monthValue}月${_selectedDate.value.dayOfMonth}日 ${result.dunType}${result.juNumber}局"
                     },
                     huangLi = huangLi?.summary ?: "",
+                    aiPrompt = _aiPrompt.value,
                     aiReading = buildString {
                         if (_aiReasoning.value.isNotBlank()) {
                             append("【思考过程】\n")

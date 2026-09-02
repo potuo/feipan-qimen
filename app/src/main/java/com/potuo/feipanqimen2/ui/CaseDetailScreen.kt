@@ -210,15 +210,16 @@ fun CaseDetailScreen(
                 }
             }
             OutlinedTextField(
-                value = tags,
-                onValueChange = { tags = it },
-                label = { Text("占断/备注") },
-                modifier = Modifier.fillMaxWidth(),
-            )
-            OutlinedTextField(
                 value = note,
                 onValueChange = { note = it },
                 label = { Text("标题") },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 1,
+            )
+            OutlinedTextField(
+                value = tags,
+                onValueChange = { tags = it },
+                label = { Text("占断/备注") },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3,
             )
@@ -240,6 +241,18 @@ fun CaseDetailScreen(
                         textAlign = TextAlign.Center,
                     )
                     Spacer(modifier = Modifier.height(QimenDimens.spacingSm))
+
+                    // 所问（用户输入给玄鉴的提示词）小字展示
+                    if (c.aiPrompt.isNotBlank()) {
+                        Text(
+                            "所问：${c.aiPrompt}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = QimenDimens.spacingSm),
+                        )
+                    }
 
                     // 拆分思考过程与结论（存库格式：【思考过程】…【结论】…）
                     val reasoningPart = if (c.aiReading.contains("【思考过程】")) {

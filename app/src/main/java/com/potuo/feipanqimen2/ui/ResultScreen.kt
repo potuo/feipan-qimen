@@ -247,6 +247,7 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
             onValueChange = viewModel::setTags,
             label = { Text("占断/备注") },
             modifier = Modifier.fillMaxWidth(),
+            minLines = 3,
         )
 
         Text(
