@@ -514,13 +514,19 @@ fun MainApp(
                 scope.launch {
                     downloading = true
                     downloadProgress = 0f
-                    val apkFile = File(context.cacheDir, "update.apk")
+                    // 必须下到 cacheDir/update/ 子目录（file_paths.xml 仅授权该目录），
+                    // 放 cacheDir 根目录 FileProvider.getUriForFile 会抛异常导致无法拉起安装
+                    val dir = File(context.cacheDir, "update").apply { mkdirs() }
+                    val apkFile = File(dir, "feipan-qimen-v${info.version}.apk")
                     val ok = UpdateChecker.downloadApk(info.apkUrl, apkFile) { p ->
                         scope.launch { downloadProgress = p }
                     }
                     downloading = false
                     if (ok) {
-                        UpdateChecker.installApk(context, apkFile)
+                        val installed = UpdateChecker.installApk(context, apkFile)
+                        if (!installed) {
+                            Toast.makeText(context, "下载完成，但无法自动安装，请到「关于 → 检查更新」重试", Toast.LENGTH_LONG).show()
+                        }
                         updateInfo = null
                     } else {
                         Toast.makeText(context, "下载失败，请稍后重试", Toast.LENGTH_SHORT).show()
@@ -528,9 +534,10 @@ fun MainApp(
                 }
             },
             confirmEnabled = !downloading,
-            dismissText = "取消",
+            // 下载中只保留「下载中…」主按钮，隐藏取消/不再提醒，避免三按钮挤一行文字换行
+            dismissText = if (downloading) null else "取消",
             onDismiss = { if (!downloading) updateInfo = null },
-            neutralText = "不再提醒",
+            neutralText = if (downloading) null else "不再提醒",
             onNeutral = {
                 appPrefs.edit().putString("ignored_update_version", info.version).apply()
                 updateInfo = null

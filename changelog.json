@@ -1,6 +1,14 @@
 {
   "logs": [
     {
+      "version": "v4.5.1",
+      "date": "2026-09-03",
+      "items": [
+        "修复主页自检更新下载完成后无法拉起安装：APK 误存 cacheDir 根目录（FileProvider 仅授权 update/ 子目录）导致 Uri 授权异常被静默吞掉，改为下载至 cacheDir/update/ 并补安装失败提示",
+        "修复「下载中…」按钮换行：下载中隐藏取消/不再提醒，仅保留主按钮"
+      ]
+    },
+    {
       "version": "v4.5.0",
       "date": "2026-09-01",
       "items": [

@@ -1,5 +1,5 @@
 {
-  "version": "4.5.0",
+  "version": "4.5.1",
   "apk_url": "https://gitee.com/potuo/feipan-qimen/releases/download/v4.5.0/app-debug.apk",
-  "notes": "自定义标签 + 分类占断第四卷 + 鸣法正名 + 玄鉴初学者引导"
+  "notes": "修复主页更新下载后无法自动安装 + 更新按钮换行"
 }
