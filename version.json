@@ -1,5 +1,5 @@
 {
-  "version": "4.5.2",
-  "apk_url": "https://gitee.com/potuo/feipan-qimen/releases/download/v4.5.2/app-debug.apk",
-  "notes": "输入框高度互换（标题矮/占断高）+ 案例保存玄鉴所问提示词"
+  "version": "5.0.0",
+  "apk_url": "https://gitee.com/potuo/feipan-qimen/releases/download/v5.0.0/app-debug.apk",
+  "notes": "UI 全面重构（现代宣纸风）：设计基线 + 全屏布局层级重排 + 盘面可访问性优化"
 }

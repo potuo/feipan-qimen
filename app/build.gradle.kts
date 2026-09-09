@@ -12,8 +12,8 @@ android {
         applicationId = "com.potuo.feipanqimen2"
         minSdk = 26
         targetSdk = 34
-        versionCode = 29
-        versionName = "4.5.2"
+        versionCode = 30
+        versionName = "5.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
