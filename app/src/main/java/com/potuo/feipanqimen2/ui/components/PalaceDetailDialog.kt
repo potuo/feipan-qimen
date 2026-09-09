@@ -1,11 +1,14 @@
 package com.potuo.feipanqimen2.ui.components
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -19,6 +22,7 @@ import com.potuo.feipanqimen2.qimen.QimenConstants
 import com.potuo.feipanqimen2.qimen.QimenResult
 import com.potuo.feipanqimen2.ui.theme.LocalQimenPalette
 import com.potuo.feipanqimen2.ui.theme.QimenDimens
+import com.potuo.feipanqimen2.ui.theme.QimenShapeTokens
 
 /**
  * 单宫详解弹窗：点按盘面宫格后弹出，展示该宫的星/门/神结构化释义
@@ -42,18 +46,18 @@ fun PalaceDetailDialog(
         onConfirm = onDismiss,
         dismissText = null,
         text = {
-            Column {
+            Column(verticalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm)) {
                 // ── 星 ──
-                EntitySection("星", info.star, info.star)
+                EntityCard("星", info.star, info.star)
 
                 // ── 门 ──
-                EntitySection("门", info.gate, "${info.gate}门")
+                EntityCard("门", info.gate, "${info.gate}门")
 
                 // ── 神 ──
-                EntitySection("神", info.god, info.god)
+                EntityCard("神", info.god, info.god)
 
                 // ── 奇仪 / 六亲 / 旺衰 ──
-                SectionLabel("奇仪")
+                DetailCard("奇仪·六亲·旺衰") {
                 Text(
                     "天盘干：${info.heavenStem}" +
                         (if (info.liuQinHeaven.isNotEmpty()) "（${info.liuQinHeaven}）" else "") +
@@ -85,12 +89,13 @@ fun PalaceDetailDialog(
                         lineHeight = 20.sp,
                     )
                 }
+                }
 
                 // ── 奇门演卦（星门 / 门宫）──
                 val xingMen = QiMenYanGua.xingMenYanGua(info.star, info.gate)
                 val menGong = QiMenYanGua.menGongYanGua(info.gate, palaceNum)
                 if (xingMen != null || menGong != null) {
-                    SectionLabel("演卦")
+                    DetailCard("演卦") {
                     xingMen?.let {
                         Text(
                             "星门演卦：${it.hexagram}（${it.upperDesc} 上 / ${it.lowerDesc} 下）",
@@ -107,10 +112,31 @@ fun PalaceDetailDialog(
                             lineHeight = 20.sp,
                         )
                     }
+                    }
                 }
             }
         },
     )
+}
+
+@Composable
+private fun EntityCard(label: String, name: String, displayName: String) {
+    DetailCard("$label · $displayName") { EntitySection(label, name, displayName, showLabel = false) }
+}
+
+@Composable
+private fun DetailCard(title: String, content: @Composable () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = QimenShapeTokens.card,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+    ) {
+        Column(Modifier.padding(QimenDimens.cardPadding)) {
+            Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+            Spacer(Modifier.height(QimenDimens.spacingSm))
+            content()
+        }
+    }
 }
 
 /**
@@ -118,9 +144,9 @@ fun PalaceDetailDialog(
  * 结构化速查表无数据时，回退到教材 vol2 原文。
  */
 @Composable
-private fun EntitySection(label: String, name: String, displayName: String) {
+private fun EntitySection(label: String, name: String, displayName: String, showLabel: Boolean = true) {
     val context = LocalContext.current
-    SectionLabel("$label · $displayName")
+    if (showLabel) SectionLabel("$label · $displayName")
     val meta = PalaceRef.info(name)
     if (meta != null) {
         Text(

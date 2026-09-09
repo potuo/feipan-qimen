@@ -4,330 +4,113 @@ import android.content.Context
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.potuo.feipanqimen2.AiAssistant
 import com.potuo.feipanqimen2.data.CaseTags
-import com.potuo.feipanqimen2.ui.components.CollapsibleSection
-import com.potuo.feipanqimen2.ui.components.QimenButton
-import com.potuo.feipanqimen2.ui.theme.QimenDimens
+import com.potuo.feipanqimen2.ui.components.*
+import com.potuo.feipanqimen2.ui.theme.*
 import com.potuo.feipanqimen2.viewmodel.MainViewModel
 import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import java.util.*
 
-/** 配色单选行 */
-@Composable
-private fun ThemeOptionRow(
-    name: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = QimenDimens.spacingSm),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        RadioButton(selected = selected, onClick = onClick)
-        Text(
-            name,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(start = 8.dp),
-        )
+private data class ThemePreview(val key: String, val name: String, val light: QimenPalette, val dark: QimenPalette)
+private val themePreviews = listOf(
+    ThemePreview("classic", "古典金", QimenPalettes.ClassicLight, QimenPalettes.ClassicDark),
+    ThemePreview("ziwei", "紫微", QimenPalettes.ZiweiLight, QimenPalettes.ZiweiDark),
+    ThemePreview("xuanmo", "玄墨", QimenPalettes.XuanMoLight, QimenPalettes.XuanMoDark),
+    ThemePreview("qinghua", "青花", QimenPalettes.QingHuaLight, QimenPalettes.QingHuaDark),
+    ThemePreview("zheshi", "赭石", QimenPalettes.ZheShiLight, QimenPalettes.ZheShiDark),
+)
+
+@Composable private fun PaletteStrip(p: QimenPalette, modifier: Modifier = Modifier) {
+    Row(modifier.height(QimenDimens.spacingXl)) {
+        listOf(p.paper, p.gold, p.cinnabar, p.inkText).forEach { Box(Modifier.weight(1f).fillMaxHeight().background(it)) }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SettingsScreen(
-    viewModel: MainViewModel,
-    isDark: Boolean = false,
-    themeName: String = "classic",
-    onSelectTheme: (String) -> Unit = {},
-) {
-    val context = LocalContext.current
-    var longitudeText by remember {
-        val v = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
-            .getFloat("longitude", 120.0f)
-        mutableStateOf(if (v % 1f == 0f) v.toInt().toString() else v.toString())
-    }
-    val exportLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.CreateDocument("application/json"),
-    ) { uri -> uri?.let { viewModel.exportAll(it) } }
-
-    val importLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.OpenDocument(),
-    ) { uri -> uri?.let { viewModel.importCases(it) } }
-
-    Scaffold { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(QimenDimens.spacingLg),
-            verticalArrangement = Arrangement.spacedBy(QimenDimens.spacingMd),
-        ) {
-            // ── 外观 ──
-            CollapsibleSection(title = "外观 · 配色", defaultExpanded = true) {
-                Column {
-                    ThemeOptionRow(
-                        name = "古典金",
-                        selected = themeName == "classic",
-                        onClick = { onSelectTheme("classic") },
-                    )
-                    ThemeOptionRow(
-                        name = "紫微",
-                        selected = themeName == "ziwei",
-                        onClick = { onSelectTheme("ziwei") },
-                    )
-                    ThemeOptionRow(
-                        name = "玄墨",
-                        selected = themeName == "xuanmo",
-                        onClick = { onSelectTheme("xuanmo") },
-                    )
-                    ThemeOptionRow(
-                        name = "青花",
-                        selected = themeName == "qinghua",
-                        onClick = { onSelectTheme("qinghua") },
-                    )
-                    ThemeOptionRow(
-                        name = "赭石",
-                        selected = themeName == "zheshi",
-                        onClick = { onSelectTheme("zheshi") },
-                    )
-                }
-                HorizontalDivider(modifier = Modifier.padding(vertical = QimenDimens.spacingSm))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        "明暗",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium,
-                    )
-                    Spacer(modifier = Modifier.weight(1f))
-                    Text(
-                        if (isDark) "暗色" else "浅色",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                }
+@Composable private fun ThemePreviewCard(theme: ThemePreview, selected: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Card(
+        modifier = modifier.clickable(onClick = onClick),
+        border = BorderStroke(if (selected) 2.dp else 1.dp, if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+    ) {
+        Column(Modifier.padding(QimenDimens.spacingSm), verticalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(QimenDimens.spacingXs)) {
+                PaletteStrip(theme.light, Modifier.weight(1f)); PaletteStrip(theme.dark, Modifier.weight(1f))
             }
-
-            // ── 玄鉴 ──
-            CollapsibleSection(title = "玄鉴") {
-                var aiEnabled by remember {
-                    mutableStateOf(AiAssistant.readConfig(context).enabled)
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        "启用玄鉴",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium,
-                    )
-                    Spacer(modifier = Modifier.weight(1f))
-                    Switch(
-                        checked = aiEnabled,
-                        onCheckedChange = { on ->
-                            aiEnabled = on
-                            val cfg = AiAssistant.readConfig(context).copy(enabled = on)
-                            AiAssistant.saveConfig(context, cfg)
-                        },
-                    )
-                }
-                Text(
-                    "玄鉴以飞盘奇门断法为纲，佐以自备资料，为盘面参断吉凶。意见仅供参考，不可尽信。",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = QimenDimens.spacingSm),
-                )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(theme.name, style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
+                if (selected) Box(Modifier.size(QimenDimens.spacingSm).background(MaterialTheme.colorScheme.primary, CircleShape))
             }
-
-            // ── 排盘设置 ──
-            CollapsibleSection(title = "排盘设置") {
-                Text(
-                    "所在经度（东经）：",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                OutlinedTextField(
-                    value = longitudeText,
-                    onValueChange = { input ->
-                        // 全角数字归一为半角，再过滤非数字/小数点，保证 toFloatOrNull 必然可解析
-                        val half = input.map { ch ->
-                            when {
-                                ch in '０'..'９' -> ('0' + (ch - '０'))
-                                ch == '．' -> '.'
-                                else -> ch
-                            }
-                        }.joinToString("")
-                        val filtered = half.filter { it in '0'..'9' || it == '.' }
-                        longitudeText = filtered
-                        filtered.toFloatOrNull()?.let { v ->
-                            if (v in 73.0f..136.0f) {
-                                context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
-                                    .edit().putFloat("longitude", v).apply()
-                            }
-                        }
-                    },
-                    label = { Text("东经度数（默认 120）") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = QimenDimens.spacingSm),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                )
-                Text(
-                    "输入后自动保存（东经 73°~136°，默认 120°）",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = QimenDimens.spacingXs),
-                )
-            }
-
-            // ── 数据管理 ──
-            CollapsibleSection(title = "数据管理") {
-                QimenButton(
-                    onClick = {
-                        val date = SimpleDateFormat("yyyyMMdd", Locale.CHINA).format(Date())
-                        exportLauncher.launch("feipan_qimen_cases_$date.json")
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = QimenDimens.spacingSm),
-                ) { Text("导出全部案例") }
-                QimenButton(
-                    onClick = { importLauncher.launch(arrayOf("application/json", "*/*")) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = QimenDimens.spacingSm),
-                ) { Text("导入案例") }
-            }
-
-            // ── 标签管理 ──
-            CollapsibleSection(title = "标签管理") {
-                var caseTags by remember { mutableStateOf(CaseTags.read(context)) }
-                var newTag by remember { mutableStateOf("") }
-                var editingIndex by remember { mutableStateOf<Int?>(null) }
-                var editText by remember { mutableStateOf("") }
-
-                Text(
-                    "案例事项标签，同步用于占断分类与案例库筛选",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                caseTags.forEachIndexed { idx, tag ->
-                    if (editingIndex == idx) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = QimenDimens.spacingSm),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            OutlinedTextField(
-                                value = editText,
-                                onValueChange = { editText = it },
-                                modifier = Modifier.weight(1f),
-                                singleLine = true,
-                            )
-                            TextButton(onClick = {
-                                val t = editText.trim()
-                                if (t.isNotEmpty()) {
-                                    val updated = caseTags.toMutableList().apply { set(idx, t) }
-                                    CaseTags.save(context, updated)
-                                    caseTags = CaseTags.read(context)
-                                }
-                                editingIndex = null
-                            }) { Text("保存") }
-                            TextButton(onClick = { editingIndex = null }) { Text("取消") }
-                        }
-                    } else {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = QimenDimens.spacingSm),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                tag,
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.weight(1f),
-                            )
-                            TextButton(onClick = { editingIndex = idx; editText = tag }) { Text("改") }
-                            TextButton(onClick = {
-                                if (caseTags.size <= 1) {
-                                    Toast.makeText(context, "至少保留一个标签", Toast.LENGTH_SHORT).show()
-                                } else {
-                                    CaseTags.save(context, caseTags.filterIndexed { i, _ -> i != idx })
-                                    caseTags = CaseTags.read(context)
-                                }
-                            }) { Text("删") }
-                        }
-                    }
-                }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = QimenDimens.spacingSm),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    OutlinedTextField(
-                        value = newTag,
-                        onValueChange = { newTag = it },
-                        label = { Text("新标签名") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true,
-                    )
-                    QimenButton(
-                        onClick = {
-                            val t = newTag.trim()
-                            if (t.isNotEmpty() && t !in caseTags) {
-                                CaseTags.save(context, caseTags + t)
-                                caseTags = CaseTags.read(context)
-                                newTag = ""
-                            }
-                        },
-                        modifier = Modifier.padding(start = QimenDimens.spacingSm),
-                    ) { Text("添加") }
-                }
-            }
+            Text("浅色 / 暗色", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
+}
+
+@Composable fun SettingsScreen(viewModel: MainViewModel, isDark: Boolean = false, themeName: String = "classic", onSelectTheme: (String) -> Unit = {}) {
+    val context = LocalContext.current
+    var longitudeText by remember {
+        val value = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE).getFloat("longitude", 120f)
+        mutableStateOf(if (value % 1f == 0f) value.toInt().toString() else value.toString())
+    }
+    var longitudeSaved by remember { mutableStateOf(false) }
+    var aiEnabled by remember { mutableStateOf(AiAssistant.readConfig(context).enabled) }
+    var caseTags by remember { mutableStateOf(CaseTags.read(context)) }
+    var newTag by remember { mutableStateOf("") }
+    var editingIndex by remember { mutableStateOf<Int?>(null) }
+    var editText by remember { mutableStateOf("") }
+    var pendingDeleteTag by remember { mutableStateOf<Pair<Int, String>?>(null) }
+    val longitude = longitudeText.toFloatOrNull()
+    val longitudeValid = longitude != null && longitude in 73f..136f
+    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { it?.let(viewModel::exportAll) }
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { it?.let(viewModel::importCases) }
+
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(QimenDimens.pageGutter), verticalArrangement = Arrangement.spacedBy(QimenDimens.spacingMd)) {
+        item { SectionHeader("外观", sealMark = themePreviews.firstOrNull { it.key == themeName }?.name) }
+        item { QimenCard {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) { Text("主题与显示", style = MaterialTheme.typography.titleSmall); Text(if (isDark) "当前为暗色" else "当前为浅色", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                Text("明暗由全局外观开关切换", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+            }
+            Spacer(Modifier.height(QimenDimens.spacingMd))
+            Column(verticalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm)) { themePreviews.chunked(2).forEach { themes -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm)) { themes.forEach { ThemePreviewCard(it, it.key == themeName, Modifier.weight(1f)) { onSelectTheme(it.key) } }; if (themes.size == 1) Spacer(Modifier.weight(1f)) } } }
+        } }
+        item { SectionHeader("排盘", sealMark = if (longitudeValid) "已配置" else "待修正") }
+        item { QimenCard {
+            Text("所在经度", style = MaterialTheme.typography.titleSmall)
+            Text("东经 73°–136°，例如北京 116.4°；默认 120°。", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            OutlinedTextField(longitudeText, { input -> longitudeSaved = false; longitudeText = input.map { ch -> when { ch in '０'..'９' -> '0' + (ch - '０'); ch == '．' -> '.'; else -> ch } }.joinToString("").filter { it.isDigit() || it == '.' } }, label = { Text("东经度数") }, suffix = { Text("°E") }, supportingText = { Text(if (longitudeText.isBlank() || longitudeValid) "合法范围 73–136" else "请输入 73–136 之间的数值") }, isError = longitudeText.isNotBlank() && !longitudeValid, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth().padding(top = QimenDimens.spacingSm))
+            QimenButton(onClick = { context.getSharedPreferences("app_settings", Context.MODE_PRIVATE).edit().putFloat("longitude", longitude!!).apply(); longitudeSaved = true }, enabled = longitudeValid, modifier = Modifier.fillMaxWidth()) { Text(if (longitudeSaved) "已保存" else "保存经度") }
+            if (longitudeSaved) Text("经度已保存到本机设置。", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+        } }
+        item { SectionHeader("玄鉴", sealMark = if (aiEnabled) "已启用" else "已关闭") }
+        item { QimenCard { Row(verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f)) { Text("启用玄鉴", style = MaterialTheme.typography.titleSmall); Text("意见仅供参考，不可尽信。", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }; Switch(aiEnabled, { enabled -> aiEnabled = enabled; AiAssistant.saveConfig(context, AiAssistant.readConfig(context).copy(enabled = enabled)) }) } } }
+        item { SectionHeader("数据", sealMark = "JSON") }
+        item { QimenCard {
+            Text("案例文件", style = MaterialTheme.typography.titleSmall); Text("导出为 JSON 备份；导入会写入案例库，请先备份。", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            QimenOutlinedButton(onClick = { val date = SimpleDateFormat("yyyyMMdd", Locale.CHINA).format(Date()); exportLauncher.launch("feipan_qimen_cases_$date.json") }, modifier = Modifier.fillMaxWidth().padding(top = QimenDimens.spacingSm)) { Text("导出全部案例（JSON）") }
+            QimenButton(onClick = { importLauncher.launch(arrayOf("application/json", "*/*")) }, modifier = Modifier.fillMaxWidth().padding(top = QimenDimens.spacingSm), containerColor = MaterialTheme.colorScheme.errorContainer, contentColor = MaterialTheme.colorScheme.onErrorContainer) { Text("导入案例·谨慎") }
+        } }
+        item { SectionHeader("标签", sealMark = "${caseTags.size} 个") }
+        itemsIndexed(caseTags, key = { _, tag -> tag }) { index, tag -> QimenCard {
+            if (editingIndex == index) { OutlinedTextField(editText, { editText = it }, Modifier.fillMaxWidth(), label = { Text("标签名") }, singleLine = true); Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { TextButton({ editingIndex = null }) { Text("取消") }; TextButton({ val value = editText.trim(); if (value.isNotEmpty()) { CaseTags.save(context, caseTags.toMutableList().apply { set(index, value) }); caseTags = CaseTags.read(context) }; editingIndex = null }) { Text("保存") } } }
+            else Row(verticalAlignment = Alignment.CenterVertically) { Text(tag, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f)); TextButton({ editingIndex = index; editText = tag }) { Text("编辑") }; TextButton({ if (caseTags.size <= 1) Toast.makeText(context, "至少保留一个标签", Toast.LENGTH_SHORT).show() else pendingDeleteTag = index to tag }) { Text("删除", color = MaterialTheme.colorScheme.error) } }
+        } }
+        item { QimenCard { Text("添加标签", style = MaterialTheme.typography.titleSmall); Row(verticalAlignment = Alignment.CenterVertically) { OutlinedTextField(newTag, { newTag = it }, Modifier.weight(1f), label = { Text("新标签名") }, singleLine = true); QimenButton({ val value = newTag.trim(); if (value.isNotEmpty() && value !in caseTags) { CaseTags.save(context, caseTags + value); caseTags = CaseTags.read(context); newTag = "" } }, Modifier.padding(start = QimenDimens.spacingSm)) { Text("添加") } } } }
+    }
+    pendingDeleteTag?.let { (index, tag) -> QimenDialog(onDismissRequest = { pendingDeleteTag = null }, title = "删除标签？", text = { Text("「$tag」将从标签列表移除。") }, confirmText = "删除", destructive = true, onConfirm = { CaseTags.save(context, caseTags.filterIndexed { i, _ -> i != index }); caseTags = CaseTags.read(context); pendingDeleteTag = null }, dismissText = "取消", onDismiss = { pendingDeleteTag = null }) }
 }

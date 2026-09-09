@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -59,6 +60,8 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.potuo.feipanqimen2.ui.components.BlockItem
+import com.potuo.feipanqimen2.ui.components.Badge
+import com.potuo.feipanqimen2.ui.components.EmptyState
 import com.potuo.feipanqimen2.ui.components.MdBlock
 import com.potuo.feipanqimen2.ui.components.parseMd
 import com.potuo.feipanqimen2.ui.theme.CardShape
@@ -68,17 +71,34 @@ import com.potuo.feipanqimen2.ui.theme.QimenPalette
 import kotlinx.coroutines.launch
 
 private data class VolumeInfo(
+    val number: String,
     val title: String,
     val fileName: String,
     val summary: String,
+    val tags: List<String>,
 )
 
 private val VOLUMES = listOf(
-    VolumeInfo("第一卷 · 数术基础", "vol1.txt", "河图洛书（含原图）/ 先后天八卦 / 八卦万物类象 / 阴阳五行 / 天干地支 / 六十甲子 / 二十四节气"),
-    VolumeInfo("第二卷 · 奇门排盘", "vol2.txt", "排列四柱 / 定阴阳局 / 布地盘天盘 / 九神九星八门 / 暗干支 / 置闰拆补（含排盘案例图）"),
-    VolumeInfo("第三卷 · 占断法则", "vol3.txt", "六仪击刑 / 正格辅格 / 守门九遁 / 三诈五假 / 六亲断法 / 星门八卦对应"),
-    VolumeInfo("第四卷 · 分类占断", "vol4.txt", "取用神通则 / 射覆 / 寻失物 / 求财 / 婚姻 / 疾病 / 出行 / 考试 / 官讼 / 行人 / 胎产 / 占天气"),
+    VolumeInfo("壹", "第一卷 · 数术基础", "vol1.txt", "河图洛书（含原图）/ 先后天八卦 / 八卦万物类象 / 阴阳五行 / 天干地支 / 六十甲子 / 二十四节气", listOf("基础", "图象")),
+    VolumeInfo("贰", "第二卷 · 奇门排盘", "vol2.txt", "排列四柱 / 定阴阳局 / 布地盘天盘 / 九神九星八门 / 暗干支 / 置闰拆补（含排盘案例图）", listOf("排盘", "案例")),
+    VolumeInfo("叁", "第三卷 · 占断法则", "vol3.txt", "六仪击刑 / 正格辅格 / 守门九遁 / 三诈五假 / 六亲断法 / 星门八卦对应", listOf("格局", "断法")),
+    VolumeInfo("肆", "第四卷 · 分类占断", "vol4.txt", "取用神通则 / 射覆 / 寻失物 / 求财 / 婚姻 / 疾病 / 出行 / 考试 / 官讼 / 行人 / 胎产 / 占天气", listOf("分类", "实用")),
 )
+
+private fun highlighted(text: String, query: String): AnnotatedString = buildAnnotatedString {
+    if (query.isBlank()) {
+        append(text)
+    } else {
+        var start = 0
+        while (start < text.length) {
+            val hit = text.indexOf(query, start, ignoreCase = true)
+            if (hit < 0) { append(text.substring(start)); break }
+            append(text.substring(start, hit))
+            withStyle(SpanStyle(background = androidx.compose.ui.graphics.Color(0x55D9A441), fontWeight = FontWeight.Bold)) { append(text.substring(hit, hit + query.length)) }
+            start = hit + query.length
+        }
+    }
+}
 
 /** 教材轻量 Markdown 渲染已抽到 ui/components/MarkdownText.kt（MdBlock/parseMd/BlockItem 公共复用） */
 
@@ -217,14 +237,12 @@ private fun ReaderView(vol: VolumeInfo, onBack: () -> Unit) {
                     )
                 }
                 HorizontalDivider()
-                if (query.isNotBlank() && hits.isEmpty()) {
-                    Text(
-                        "未找到「$query」相关内容",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(QimenDimens.spacingLg),
-                    )
+                if (query.isBlank()) {
+                    EmptyState("输入关键词，可搜索本卷标题、正文、引用与条目。")
+                } else if (hits.isEmpty()) {
+                    EmptyState("未找到「$query」相关内容")
                 } else {
+                    Text("找到 ${hits.size} 处命中", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = QimenDimens.spacingLg, vertical = QimenDimens.spacingSm))
                     LazyColumn(modifier = Modifier.fillMaxSize()) {
                         items(hits) { hit ->
                             Column(
@@ -242,9 +260,8 @@ private fun ReaderView(vol: VolumeInfo, onBack: () -> Unit) {
                                     color = palette.cinnabar,
                                 )
                                 Text(
-                                    hit.preview,
-                                    fontSize = 13.5.sp,
-                                    lineHeight = 19.sp,
+                                    highlighted(hit.preview, query),
+                                    style = MaterialTheme.typography.bodySmall,
                                     color = palette.inkText,
                                     modifier = Modifier.padding(top = 2.dp),
                                 )
@@ -277,14 +294,14 @@ private fun ReaderView(vol: VolumeInfo, onBack: () -> Unit) {
             }
         }
         HorizontalDivider()
-        LazyColumn(
-            state = listState,
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(horizontal = QimenDimens.spacingLg, vertical = QimenDimens.spacingMd),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            itemsIndexed(blocks) { _, block ->
-                BlockItem(block)
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize().widthIn(max = 720.dp),
+                contentPadding = PaddingValues(horizontal = QimenDimens.pageGutter, vertical = QimenDimens.spacingMd),
+                verticalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm),
+            ) {
+                itemsIndexed(blocks) { _, block -> BlockItem(block) }
             }
         }
     }
@@ -295,14 +312,14 @@ private fun ReaderView(vol: VolumeInfo, onBack: () -> Unit) {
 @Composable
 fun LearnScreen() {
     var currentVolume by remember { mutableStateOf<VolumeInfo?>(null) }
+    val palette = LocalQimenPalette.current
 
     if (currentVolume == null) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(QimenDimens.spacingLg),
-            verticalArrangement = Arrangement.spacedBy(QimenDimens.spacingMd),
-        ) {
+        val context = LocalContext.current
+        val prefs = remember { context.getSharedPreferences("app_settings", Context.MODE_PRIVATE) }
+        LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(QimenDimens.pageGutter), verticalArrangement = Arrangement.spacedBy(QimenDimens.spacingMd)) {
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm)) {
             Text(
                 "据《奇门鸣法》体系",
                 style = MaterialTheme.typography.titleMedium,
@@ -313,11 +330,10 @@ fun LearnScreen() {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(QimenDimens.spacingMd),
-            ) {
-                VOLUMES.forEach { vol ->
+                }
+            }
+            items(VOLUMES) { vol ->
+                    val savedPosition = prefs.getInt("learn_pos_${vol.fileName}", 0)
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -326,17 +342,21 @@ fun LearnScreen() {
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                     ) {
-                        Column(modifier = Modifier.padding(QimenDimens.spacingLg)) {
+                        Row(modifier = Modifier.padding(QimenDimens.spacingLg), horizontalArrangement = Arrangement.spacedBy(QimenDimens.spacingMd)) {
+                            Surface(shape = RoundedCornerShape(QimenDimens.radiusSm), color = palette.cinnabar.copy(alpha = 0.12f)) { Text(vol.number, style = MaterialTheme.typography.headlineSmall, color = palette.cinnabar, modifier = Modifier.padding(horizontal = QimenDimens.spacingMd, vertical = QimenDimens.spacingSm)) }
+                            Column(Modifier.weight(1f)) {
                             Text(vol.title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
+                            Row(horizontalArrangement = Arrangement.spacedBy(QimenDimens.spacingXs), modifier = Modifier.padding(top = QimenDimens.spacingXs)) { vol.tags.forEach { Badge(it) } }
                             Spacer(modifier = Modifier.padding(top = QimenDimens.spacingXs))
                             Text(
                                 vol.summary,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
+                            Text(if (savedPosition > 0) "已读至第 ${savedPosition + 1} 段 · 继续阅读" else "开始阅读", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = QimenDimens.spacingSm))
+                            }
                         }
                     }
-                }
             }
         }
     } else {

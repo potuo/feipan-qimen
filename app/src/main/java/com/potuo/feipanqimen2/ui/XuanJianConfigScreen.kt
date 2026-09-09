@@ -21,6 +21,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -50,6 +52,8 @@ import com.potuo.feipanqimen2.ui.components.QimenButton
 import com.potuo.feipanqimen2.ui.components.QimenCard
 import com.potuo.feipanqimen2.ui.components.QimenDialog
 import com.potuo.feipanqimen2.ui.components.QimenOutlinedButton
+import com.potuo.feipanqimen2.ui.components.SectionHeader
+import com.potuo.feipanqimen2.ui.components.EmptyState
 import com.potuo.feipanqimen2.ui.theme.QimenDimens
 import kotlinx.coroutines.launch
 
@@ -84,10 +88,13 @@ fun XuanJianConfigScreen(onBack: () -> Unit) {
     var newSkillName by remember { mutableStateOf("") }
     var showThinkingWarn by remember { mutableStateOf(false) }
     var testing by remember { mutableStateOf(false) }
+    var testResult by remember { mutableStateOf<Result<String>?>(null) }
     var apiKeys by remember { mutableStateOf(AiAssistant.readApiKeys(context)) }
     var showAddKeyDialog by remember { mutableStateOf(false) }
     var newKeyName by remember { mutableStateOf("") }
     var newKeyValue by remember { mutableStateOf("") }
+    var pendingDeleteKey by remember { mutableStateOf<ApiKeyEntry?>(null) }
+    var pendingDeleteSkill by remember { mutableStateOf<XuanJianSkill?>(null) }
     val scope = rememberCoroutineScope()
 
     val importSkillLauncher = rememberLauncherForActivityResult(
@@ -109,27 +116,22 @@ fun XuanJianConfigScreen(onBack: () -> Unit) {
             .padding(QimenDimens.spacingLg),
         verticalArrangement = Arrangement.spacedBy(QimenDimens.spacingMd),
     ) {
-        // ── 模型 ──
+        SectionHeader("模型服务", sealMark = "${aiConfig.provider} · ${aiConfig.model.ifBlank { "未选择" }}")
         QimenCard(accentBar = true) {
             Text(
-                "模型",
+                "供应商与模型",
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(modifier = Modifier.height(QimenDimens.spacingSm))
+            var providerMenu by remember { mutableStateOf(false) }
+            var modelMenu by remember { mutableStateOf(false) }
             Row(horizontalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm)) {
                 // 候选框 1：供应商
-                Box(modifier = Modifier.weight(1f)) {
-                    var providerMenu by remember { mutableStateOf(false) }
-                    OutlinedButton(
-                        onClick = { providerMenu = true },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text(aiConfig.provider, maxLines = 1, modifier = Modifier.weight(1f))
-                        Icon(Icons.Default.ArrowDropDown, contentDescription = null)
-                    }
-                    DropdownMenu(expanded = providerMenu, onDismissRequest = { providerMenu = false }) {
+                ExposedDropdownMenuBox(expanded = providerMenu, onExpandedChange = { providerMenu = it }, modifier = Modifier.weight(1f)) {
+                    OutlinedTextField(value = aiConfig.provider, onValueChange = {}, readOnly = true, label = { Text("供应商") }, trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(providerMenu) }, modifier = Modifier.menuAnchor().fillMaxWidth())
+                    ExposedDropdownMenu(expanded = providerMenu, onDismissRequest = { providerMenu = false }) {
                         (AiAssistant.PROVIDERS.map { it.name } + AiAssistant.CUSTOM).forEach { name ->
                             DropdownMenuItem(
                                 text = { Text(name) },
@@ -150,16 +152,9 @@ fun XuanJianConfigScreen(onBack: () -> Unit) {
                     }
                 }
                 // 候选框 2：模型
-                Box(modifier = Modifier.weight(1f)) {
-                    var modelMenu by remember { mutableStateOf(false) }
-                    OutlinedButton(
-                        onClick = { modelMenu = true },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text(aiConfig.model, maxLines = 1, modifier = Modifier.weight(1f))
-                        Icon(Icons.Default.ArrowDropDown, contentDescription = null)
-                    }
-                    DropdownMenu(expanded = modelMenu, onDismissRequest = { modelMenu = false }) {
+                ExposedDropdownMenuBox(expanded = modelMenu, onExpandedChange = { modelMenu = it }, modifier = Modifier.weight(1f)) {
+                    OutlinedTextField(value = aiConfig.model, onValueChange = {}, readOnly = true, label = { Text("模型") }, trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(modelMenu) }, modifier = Modifier.menuAnchor().fillMaxWidth())
+                    ExposedDropdownMenu(expanded = modelMenu, onDismissRequest = { modelMenu = false }) {
                         val preset = AiAssistant.PROVIDERS.firstOrNull { it.name == aiConfig.provider }
                         val models = if (aiConfig.provider == AiAssistant.CUSTOM) {
                             listOf(aiConfig.model.ifBlank { "自定义模型" })
@@ -203,7 +198,7 @@ fun XuanJianConfigScreen(onBack: () -> Unit) {
                 )
             }
 
-            // ── 思考模式 ──
+            SectionHeader("思考模式", modifier = Modifier.padding(top = QimenDimens.sectionGap), sealMark = if (aiConfig.thinkingEnabled) aiConfig.thinkingLevel else "已关闭")
             val preset = AiAssistant.PROVIDERS.firstOrNull { it.name == aiConfig.provider }
             val thinkingSupported = preset != null && preset.thinkingStyle != AiAssistant.ThinkingStyle.NONE
             HorizontalDivider(modifier = Modifier.padding(vertical = QimenDimens.spacingSm))
@@ -256,6 +251,12 @@ fun XuanJianConfigScreen(onBack: () -> Unit) {
                 }
             }
 
+            SectionHeader("Key 凭据", modifier = Modifier.padding(top = QimenDimens.sectionGap), sealMark = "${apiKeys.size}/10")
+            Text(
+                if (aiConfig.apiKey.isBlank()) "尚未选择 Key" else "当前：${aiConfig.apiKeyName.ifBlank { "未命名" }} · ${"•".repeat(8)}${aiConfig.apiKey.takeLast(4)}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             // API Key 存档选择
             Box {
                 var keyMenu by remember { mutableStateOf(false) }
@@ -293,13 +294,7 @@ fun XuanJianConfigScreen(onBack: () -> Unit) {
                 ) { Text("新建 Key") }
                 QimenOutlinedButton(
                     onClick = {
-                        if (aiConfig.apiKeyName.isNotBlank()) {
-                            val updated = apiKeys.filterNot { it.name == aiConfig.apiKeyName }
-                            AiAssistant.saveApiKeys(context, updated)
-                            apiKeys = updated
-                            aiConfig = aiConfig.copy(apiKey = "", apiKeyName = "")
-                            AiAssistant.saveConfig(context, aiConfig)
-                        }
+                        pendingDeleteKey = apiKeys.firstOrNull { it.name == aiConfig.apiKeyName }
                     },
                     modifier = Modifier.weight(1f).padding(top = QimenDimens.spacingSm),
                 ) { Text("删除") }
@@ -315,19 +310,24 @@ fun XuanJianConfigScreen(onBack: () -> Unit) {
                     if (testing) return@QimenOutlinedButton
                     scope.launch {
                         testing = true
+                        testResult = null
                         val result = AiAssistant.test(context)
                         testing = false
-                        val msg = result.getOrElse { it.message ?: "未知错误" }
-                        Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                        testResult = result
                     }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = QimenDimens.spacingSm),
             ) { Text(if (testing) "测试中…" else "测试模型") }
+            when {
+                testing -> Text("正在连接 ${aiConfig.provider}…", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                testResult?.isSuccess == true -> Text(testResult?.getOrNull() ?: "模型连接成功", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                testResult?.isFailure == true -> Text("测试失败：${testResult?.exceptionOrNull()?.message ?: "未知错误"}。可检查配置后重试。", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+            }
         }
 
-        // ── 资料 skill ──
+        SectionHeader("资料 skill", sealMark = "${skills.count { it.enabled }} 已启用")
         QimenCard(accentBar = true) {
             Text(
                 "资料 skill",
@@ -344,12 +344,7 @@ fun XuanJianConfigScreen(onBack: () -> Unit) {
 
             Spacer(modifier = Modifier.height(QimenDimens.spacingSm))
             if (skills.isEmpty()) {
-                Text(
-                    "暂无资料，点下方「导入 skill」添加。",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(vertical = QimenDimens.spacingMd),
-                )
+                EmptyState("暂无资料，可从本机导入 skill。")
             } else {
                 skills.forEachIndexed { index, skill ->
                     Row(
@@ -371,6 +366,7 @@ fun XuanJianConfigScreen(onBack: () -> Unit) {
                                         modifier = Modifier.padding(start = QimenDimens.spacingXs),
                                     )
                                 }
+                                if (!skill.builtin) Text("· 本机导入", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = QimenDimens.spacingXs))
                             }
                             if (skill.content.isNotBlank()) {
                                 Text(
@@ -419,8 +415,7 @@ fun XuanJianConfigScreen(onBack: () -> Unit) {
                                 color = MaterialTheme.colorScheme.error,
                                 modifier = Modifier
                                     .clickable {
-                                        skills = skills.toMutableList().apply { removeAt(index) }
-                                        AiAssistant.saveSkills(context, skills)
+                                        pendingDeleteSkill = skill
                                     }
                                     .padding(start = QimenDimens.spacingMd),
                             )
@@ -452,6 +447,19 @@ fun XuanJianConfigScreen(onBack: () -> Unit) {
             onConfirm = { showThinkingWarn = false },
             dismissText = null,
         )
+    }
+
+    pendingDeleteKey?.let { entry ->
+        QimenDialog(onDismissRequest = { pendingDeleteKey = null }, title = "删除 Key 凭据？", text = { Text("「${entry.name}」将从本机移除，此操作不可撤销。") }, confirmText = "删除", destructive = true, onConfirm = {
+            val updated = apiKeys.filterNot { it.name == entry.name }; AiAssistant.saveApiKeys(context, updated); apiKeys = updated
+            if (aiConfig.apiKeyName == entry.name) { aiConfig = aiConfig.copy(apiKey = "", apiKeyName = ""); AiAssistant.saveConfig(context, aiConfig) }
+            pendingDeleteKey = null
+        }, dismissText = "取消", onDismiss = { pendingDeleteKey = null })
+    }
+    pendingDeleteSkill?.let { skill ->
+        QimenDialog(onDismissRequest = { pendingDeleteSkill = null }, title = "删除 skill？", text = { Text("本机资料「${skill.name}」将被删除。") }, confirmText = "删除", destructive = true, onConfirm = {
+            skills = skills.filterNot { it === skill }; AiAssistant.saveSkills(context, skills); pendingDeleteSkill = null
+        }, dismissText = "取消", onDismiss = { pendingDeleteSkill = null })
     }
 
     // ── 新建 API Key 弹窗 ──
