@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Card
@@ -41,6 +42,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -88,6 +94,7 @@ fun QimenBoard(
     var shownSet by remember {
         mutableStateOf(if (!animate || reduceMotion) gridOrder.toSet() else emptySet())
     }
+    var selectedPalace by remember(result) { mutableStateOf<Int?>(null) }
 
     LaunchedEffect(animate, reduceMotion, result) {
         if (!animate || reduceMotion) {
@@ -133,7 +140,11 @@ fun QimenBoard(
                             info = info,
                             result = result,
                             dark = dark,
-                            onClick = { onPalaceClick(palaceNum) },
+                            selected = selectedPalace == palaceNum,
+                            onClick = {
+                                selectedPalace = palaceNum
+                                onPalaceClick(palaceNum)
+                            },
                         )
                     }
                     if (!isVisible) {
@@ -150,6 +161,7 @@ private fun PalaceCell(
     info: PalaceInfo,
     result: QimenResult,
     dark: Boolean,
+    selected: Boolean,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {},
 ) {
@@ -203,13 +215,33 @@ private fun PalaceCell(
     )
     val glowWidth = 2.5.dp * glow
     val glowColor = palette.cinnabar.copy(alpha = 0.5f * glow)
-    val actualBorder = if (isSpecial && glow > 0.01f) glowColor else borderColor
+    val actualBorder = when {
+        selected -> MaterialTheme.colorScheme.primary
+        isSpecial && glow > 0.01f -> glowColor
+        else -> borderColor
+    }
+    val actualBorderWidth = if (selected) 2.dp else borderWidth + glowWidth
+    val palaceDescription = buildString {
+        append("${info.direction}${info.palace}宫")
+        if (info.god.isNotEmpty()) append("，${info.god}")
+        if (info.star.isNotEmpty()) append("，${info.star}星")
+        if (info.gate.isNotEmpty()) append("，${info.gate}门")
+        if (info.heavenStem.isNotEmpty()) append("，天盘${info.heavenStem}")
+        if (info.earthStem.isNotEmpty()) append("，地盘${info.earthStem}")
+        if (isSpecial) append("，值符值使重点宫")
+    }
 
     Box(
         modifier = modifier
             .aspectRatio(1f)
+            .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
             .background(bgColor, PalaceShape)
-            .border(borderWidth + glowWidth, actualBorder, PalaceShape)
+            .border(actualBorderWidth, actualBorder, PalaceShape)
+            .semantics {
+                role = Role.Button
+                this.selected = selected
+                contentDescription = palaceDescription
+            }
             .clickable(onClick = onClick)
             .padding(3.dp),
     ) {
@@ -222,7 +254,7 @@ private fun PalaceCell(
             Box(modifier = Modifier.fillMaxWidth()) {
                 Text(
                     text = "${info.direction}${info.palace}",
-                    fontSize = 8.sp,
+                    fontSize = 9.sp,
                     fontWeight = FontWeight.Medium,
                     color = subColor.copy(alpha = 0.7f),
                     modifier = Modifier
@@ -231,7 +263,7 @@ private fun PalaceCell(
                 )
                 Text(
                     info.god,
-                    fontSize = 8.sp,
+                    fontSize = 9.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = subColor,
                     fontFamily = QimenFontFamily,
@@ -245,7 +277,7 @@ private fun PalaceCell(
                     info.marks.forEach { m ->
                         Text(
                             m,
-                            fontSize = 6.5.sp,
+                            fontSize = 7.sp,
                             fontWeight = FontWeight.Bold,
                             color = stemColor,
                         )
@@ -258,7 +290,7 @@ private fun PalaceCell(
                 if (hiddenGan.isNotEmpty()) {
                     Text(
                         hiddenGan,
-                        fontSize = 10.sp,
+                        fontSize = 11.sp,
                         color = stemColor,
                         modifier = Modifier
                             .align(Alignment.CenterStart)
@@ -267,7 +299,7 @@ private fun PalaceCell(
                 }
                 Text(
                     info.star,
-                    fontSize = 11.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     color = if (starRed) red else textColor,
                     modifier = Modifier.align(Alignment.Center),
@@ -275,7 +307,7 @@ private fun PalaceCell(
                 if (info.heavenStem.isNotEmpty()) {
                     Text(
                         info.heavenStem,
-                        fontSize = 10.sp,
+                        fontSize = 11.sp,
                         color = if (heavenRed) red else textColor,
                         modifier = Modifier
                             .align(Alignment.CenterEnd)
@@ -289,7 +321,7 @@ private fun PalaceCell(
                 Box(modifier = Modifier.fillMaxWidth()) {
                     Text(
                         info.liuQinStar,
-                        fontSize = 7.sp,
+                        fontSize = 8.sp,
                         color = subColor,
                         modifier = Modifier
                             .align(Alignment.CenterStart)
@@ -297,7 +329,7 @@ private fun PalaceCell(
                     )
                     Text(
                         info.liuQinHeaven,
-                        fontSize = 7.sp,
+                        fontSize = 8.sp,
                         color = subColor,
                         modifier = Modifier
                             .align(Alignment.CenterEnd)
@@ -311,7 +343,7 @@ private fun PalaceCell(
                 if (hiddenZhi.isNotEmpty()) {
                     Text(
                         hiddenZhi,
-                        fontSize = 10.sp,
+                        fontSize = 11.sp,
                         color = stemColor,
                         modifier = Modifier
                             .align(Alignment.CenterStart)
@@ -320,7 +352,7 @@ private fun PalaceCell(
                 }
                 Text(
                     info.gate,
-                    fontSize = 11.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     color = if (gateRed) red else textColor,
                     fontFamily = QimenFontFamily,
@@ -329,7 +361,7 @@ private fun PalaceCell(
                 if (info.earthStem.isNotEmpty()) {
                     Text(
                         info.earthStem,
-                        fontSize = 10.sp,
+                        fontSize = 11.sp,
                         color = textColor,
                         modifier = Modifier
                             .align(Alignment.CenterEnd)
@@ -343,7 +375,7 @@ private fun PalaceCell(
                 Box(modifier = Modifier.fillMaxWidth()) {
                     Text(
                         info.liuQinGate,
-                        fontSize = 7.sp,
+                        fontSize = 8.sp,
                         color = subColor,
                         modifier = Modifier
                             .align(Alignment.CenterStart)
@@ -351,7 +383,7 @@ private fun PalaceCell(
                     )
                     Text(
                         info.liuQinEarth,
-                        fontSize = 7.sp,
+                        fontSize = 8.sp,
                         color = subColor,
                         modifier = Modifier
                             .align(Alignment.CenterEnd)
@@ -368,7 +400,7 @@ private fun PalaceCell(
                 if (info.earthGod.isNotEmpty()) {
                     Text(
                         info.earthGod,
-                        fontSize = 8.sp,
+                        fontSize = 9.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = if (earthGodRed) red else subColor,
                         fontFamily = QimenFontFamily,
@@ -379,7 +411,7 @@ private fun PalaceCell(
                 if (info.state.isNotEmpty()) {
                     Text(
                         info.state,
-                        fontSize = 8.sp,
+                        fontSize = 9.sp,
                         color = stemColor,
                         modifier = Modifier.padding(end = 4.dp),
                     )
@@ -402,6 +434,9 @@ fun MiniBoard(
     Column(
         modifier = modifier
             .aspectRatio(1f)
+            .semantics {
+                contentDescription = "九宫迷你盘，值符${result.zhiFuStar}，值使${result.zhiShiGate}门"
+            }
             .border(0.5.dp, LocalQimenPalette.current.gold.copy(alpha = 0.4f), PalaceShape)
             .padding(2.dp),
     ) {
@@ -413,6 +448,7 @@ fun MiniBoard(
             ) {
                 row.forEach { palaceNum ->
                     val info = result.palaces[palaceNum]!!
+                    val highlights = QimenBoardSpec.highlights(info, result)
                     val isZhiFu = palaceNum == result.zhiFuPalace
                     Box(
                         modifier = Modifier
@@ -429,7 +465,7 @@ fun MiniBoard(
                             info.star.removePrefix("天"),
                             fontSize = 8.sp,
                             fontWeight = if (isZhiFu) FontWeight.Bold else FontWeight.Normal,
-                            color = if (isZhiFu) LocalQimenPalette.current.cinnabar
+                            color = if (highlights.starRed) LocalQimenPalette.current.cinnabar
                             else MaterialTheme.colorScheme.onSurface,
                             textAlign = TextAlign.Center,
                             maxLines = 1,
@@ -448,46 +484,15 @@ fun HuangLiCard(
     onToggle: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-        shape = CardShape,
-        onClick = onToggle,
+    CollapsibleSection(
+        title = "黄历 · ${summary.lineSequence().firstOrNull()?.take(20).orEmpty()}",
+        expanded = expanded,
+        onExpandedChange = { onToggle() },
     ) {
-        Row(modifier = Modifier.padding(QimenDimens.spacingLg)) {
-            Box(
-                modifier = Modifier
-                    .width(QimenDimens.spacingXs)
-                    .height(if (expanded) 56.dp else 40.dp)
-                    .background(LocalQimenPalette.current.cinnabar, CircleShape),
-            )
-            Column(modifier = Modifier.padding(start = QimenDimens.spacingMd)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        "黄历",
-                        fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    Text(
-                        if (expanded) "收起" else "展开",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                }
-                Crossfade(targetState = expanded, label = "huangli", animationSpec = tween(250)) { isExpanded ->
-                    Text(
-                        text = if (isExpanded) summary else summary.lines().take(2).joinToString("\n"),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = QimenDimens.spacingSm),
-                    )
-                }
-            }
-        }
+        Text(
+            text = summary,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }

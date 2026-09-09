@@ -21,6 +21,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -51,6 +53,10 @@ import com.potuo.feipanqimen2.log.LogManager
 import com.potuo.feipanqimen2.qimen.QimenConstants
 import com.potuo.feipanqimen2.qimen.QimenResult
 import com.potuo.feipanqimen2.ui.components.HuangLiCard
+import com.potuo.feipanqimen2.ui.components.Badge
+import com.potuo.feipanqimen2.ui.components.ErrorState
+import com.potuo.feipanqimen2.ui.components.LoadingState
+import com.potuo.feipanqimen2.ui.components.SectionHeader
 import com.potuo.feipanqimen2.ui.components.MarkdownText
 import com.potuo.feipanqimen2.ui.components.QimenBoard
 import com.potuo.feipanqimen2.ui.components.QimenCard
@@ -80,6 +86,9 @@ fun CaseDetailScreen(
     var huangLiExpanded by remember { mutableStateOf(false) }
     var selectedPalace by remember { mutableStateOf<Int?>(null) }
     var result by remember { mutableStateOf<QimenResult?>(null) }
+    var loadComplete by remember { mutableStateOf(false) }
+    var parseFailed by remember { mutableStateOf(false) }
+    var savedMessage by remember { mutableStateOf<String?>(null) }
 
     BackHandler(onBack = onBack)
 
@@ -91,8 +100,11 @@ fun CaseDetailScreen(
             note = it.note
             feedback = it.feedback
             category = it.category
-            result = viewModel.deserializePan(it.panJson)
+            result = runCatching { viewModel.deserializePan(it.panJson) }
+                .onFailure { parseFailed = true }
+                .getOrNull()
         }
+        loadComplete = true
     }
 
     val context = LocalContext.current
@@ -101,8 +113,16 @@ fun CaseDetailScreen(
 
     val c = case
     val r = result
-    if (c == null || r == null) {
-        Text("加载中…", modifier = Modifier.padding(QimenDimens.spacingLg))
+    if (!loadComplete) {
+        LoadingState(message = "正在加载案例…", modifier = Modifier.fillMaxSize())
+        return
+    }
+    if (c == null) {
+        ErrorState(message = "记录不存在或已被删除", retryLabel = "返回案例", onRetry = onBack, modifier = Modifier.fillMaxSize())
+        return
+    }
+    if (r == null) {
+        ErrorState(message = if (parseFailed) "盘面数据解析失败" else "无法读取盘面", retryLabel = "返回案例", onRetry = onBack, modifier = Modifier.fillMaxSize())
         return
     }
 
@@ -150,6 +170,7 @@ fun CaseDetailScreen(
                 Icon(Icons.Default.Delete, contentDescription = "删除")
             }
         }
+            SectionHeader(title = "盘面信息")
             Text(c.siZhu, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -157,26 +178,19 @@ fun CaseDetailScreen(
                 verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
             ) {
                 Text("${c.dunType}${c.juNumber}局 · ${c.jieQi} · ${c.yuan}")
-                Text(
-                    if (feedback.isNotBlank()) "已反馈" else "未反馈",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (feedback.isNotBlank()) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                    },
-                    modifier = Modifier
-                        .background(
-                            if (feedback.isNotBlank()) {
-                                MaterialTheme.colorScheme.primaryContainer
-                            } else {
-                                MaterialTheme.colorScheme.surfaceVariant
-                            },
-                            RoundedCornerShape(50),
-                        )
-                        .padding(horizontal = 10.dp, vertical = 3.dp),
-                )
+                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = if (feedback.isNotBlank()) Icons.Default.CheckCircle else Icons.Default.Info,
+                        contentDescription = null,
+                        tint = if (feedback.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(end = QimenDimens.spacingXs),
+                    )
+                    Badge(
+                        text = if (feedback.isNotBlank()) "已反馈" else "未反馈",
+                        containerColor = if (feedback.isNotBlank()) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = if (feedback.isNotBlank()) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
             Text("值符：${r.zhiFuStar}落${QimenConstants.PALACE_NAMES[r.zhiFuPalace]}宫")
             Text("值使：${r.zhiShiGate}门落${QimenConstants.PALACE_NAMES[r.zhiShiPalace]}宫")
@@ -191,6 +205,9 @@ fun CaseDetailScreen(
                 )
             }
 
+            QimenCard(accentBar = true) {
+            SectionHeader(title = "案例记录", sealMark = if (savedMessage == null) null else "已保存")
+            Spacer(modifier = Modifier.height(QimenDimens.spacingMd))
             Text(
                 "事项分类",
                 style = MaterialTheme.typography.titleSmall,
@@ -230,6 +247,15 @@ fun CaseDetailScreen(
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 2,
             )
+            savedMessage?.let { Text(it, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary) }
+            QimenButton(
+                onClick = {
+                    viewModel.updateCase(c, category, tags, note, feedback)
+                    savedMessage = "修改已保存"
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("保存修改") }
+            }
 
             if (c.aiReading.isNotBlank()) {
                 QimenCard(accentBar = true) {
@@ -291,10 +317,6 @@ fun CaseDetailScreen(
                 }
             }
 
-            QimenButton(
-                onClick = { viewModel.updateCase(c, category, tags, note, feedback) },
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text("保存修改") }
     }
 
     if (showDeleteDialog) {

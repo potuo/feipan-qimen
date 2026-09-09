@@ -3,8 +3,6 @@ package com.potuo.feipanqimen2.ui
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,6 +11,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -20,8 +20,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SecondaryTabRow
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -31,7 +29,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.potuo.feipanqimen2.ui.components.Badge
 import com.potuo.feipanqimen2.data.CaseTags
 import com.potuo.feipanqimen2.data.CaseEntity
 import com.potuo.feipanqimen2.ui.components.EmptyState
@@ -43,7 +41,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CaseListScreen(
     viewModel: MainViewModel,
@@ -77,30 +75,22 @@ fun CaseListScreen(
                 singleLine = true,
             )
 
-            // 反馈状态 Tab（未反馈 / 已反馈）
-            val feedbackTabIndex = if (feedbackFilter == "未反馈") 0 else 1
-            SecondaryTabRow(
-                selectedTabIndex = feedbackTabIndex,
-                modifier = Modifier.padding(vertical = QimenDimens.spacingXs),
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm),
             ) {
-                Tab(
-                    selected = feedbackTabIndex == 0,
-                    onClick = { viewModel.setFeedbackFilter("未反馈") },
-                    text = { Text("未反馈 $notFeedbackedCount") },
-                )
-                Tab(
-                    selected = feedbackTabIndex == 1,
-                    onClick = { viewModel.setFeedbackFilter("已反馈") },
-                    text = { Text("已反馈 $feedbackedCount") },
-                )
+                listOf("全部" to (feedbackedCount + notFeedbackedCount), "未反馈" to notFeedbackedCount, "已反馈" to feedbackedCount).forEach { (label, count) ->
+                    FilterChip(
+                        selected = feedbackFilter == label,
+                        onClick = { viewModel.setFeedbackFilter(label) },
+                        label = { Text("$label $count") },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             }
 
-            // 类别细分（类目项）
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm),
-                verticalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm),
-            ) {
-                (listOf("全部") + CaseTags.read(context)).forEach { c ->
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm)) {
+                items(listOf("全部") + CaseTags.read(context)) { c ->
                     FilterChip(
                         selected = categoryFilter == c,
                         onClick = { viewModel.setCategoryFilter(c) },
@@ -113,15 +103,12 @@ fun CaseListScreen(
                 }
             }
 
-            // 统计（仅显示有案例的类别）
-            if (categoryStats.isNotEmpty()) {
-                Text(
-                    categoryStats.joinToString("  ") { "${it.category}×${it.count}" },
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = QimenDimens.spacingSm),
-                )
-            }
+            Text(
+                "共 ${cases.size} 例 · ${if (searchQuery.isBlank() && categoryFilter == "全部" && feedbackFilter == "全部") "全部案例" else "当前筛选"}",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(vertical = QimenDimens.spacingSm),
+            )
 
             if (cases.isEmpty()) {
                 if (categoryStats.isEmpty()) {
@@ -143,7 +130,7 @@ fun CaseListScreen(
                 }
             } else {
                 LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
+                    columns = GridCells.Adaptive(minSize = 320.dp),
                     contentPadding = PaddingValues(vertical = QimenDimens.spacingSm),
                     horizontalArrangement = Arrangement.spacedBy(QimenDimens.spacingMd),
                     verticalArrangement = Arrangement.spacedBy(QimenDimens.spacingMd),
@@ -175,8 +162,8 @@ private fun CaseCard(case: CaseEntity, dateFormat: SimpleDateFormat, onClick: ()
             MiniBoard(panJson = case.panJson)
             Text(
                 case.siZhu,
-                fontWeight = FontWeight.Bold,
-                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                style = MaterialTheme.typography.bodyMedium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(top = QimenDimens.spacingSm),
@@ -188,28 +175,16 @@ private fun CaseCard(case: CaseEntity, dateFormat: SimpleDateFormat, onClick: ()
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            if (case.category.isNotBlank()) {
-                Text(
-                    "［${case.category}］",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
             Row(
                 verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                modifier = Modifier.padding(top = 2.dp),
+                horizontalArrangement = Arrangement.spacedBy(QimenDimens.spacingSm),
+                modifier = Modifier.padding(top = QimenDimens.spacingSm),
             ) {
-                Text(
-                    if (case.feedback.isNotBlank()) "● 已反馈" else "○ 未反馈",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (case.feedback.isNotBlank()) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                    },
+                if (case.category.isNotBlank()) Badge(text = case.category)
+                Badge(
+                    text = if (case.feedback.isNotBlank()) "✓ 已反馈" else "○ 未反馈",
+                    containerColor = if (case.feedback.isNotBlank()) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                    contentColor = if (case.feedback.isNotBlank()) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             if (case.tags.isNotBlank()) {
@@ -225,6 +200,7 @@ private fun CaseCard(case: CaseEntity, dateFormat: SimpleDateFormat, onClick: ()
                 dateFormat.format(Date(case.createTime)),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                modifier = Modifier.padding(top = QimenDimens.spacingSm),
             )
         }
     }

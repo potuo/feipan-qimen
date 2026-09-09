@@ -54,6 +54,10 @@ import com.potuo.feipanqimen2.qimen.PatternInfo
 import com.potuo.feipanqimen2.qimen.QimenConstants
 import com.potuo.feipanqimen2.qimen.QimenPatternDetector
 import com.potuo.feipanqimen2.ui.components.HuangLiCard
+import com.potuo.feipanqimen2.ui.components.CollapsibleSection
+import com.potuo.feipanqimen2.ui.components.EmptyState
+import com.potuo.feipanqimen2.ui.components.LoadingState
+import com.potuo.feipanqimen2.ui.components.SectionHeader
 import com.potuo.feipanqimen2.ui.components.MarkdownText
 import com.potuo.feipanqimen2.ui.components.PalaceDetailDialog
 import com.potuo.feipanqimen2.ui.components.QimenBoard
@@ -86,6 +90,9 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
     var boardAnimate by remember { mutableStateOf(true) }
     var showAiDialog by remember { mutableStateOf(false) }
     var aiSituation by remember { mutableStateOf("") }
+    var patternsExpanded by remember { mutableStateOf(true) }
+    var aiExpanded by remember { mutableStateOf(true) }
+    var saveMessage by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val palette = LocalQimenPalette.current
@@ -94,7 +101,12 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
     BackHandler(onBack = onBack)
 
     if (result == null) {
-        Text("无排盘结果", modifier = Modifier.padding(QimenDimens.spacingLg))
+        EmptyState(
+            message = "暂无排盘结果",
+            actionLabel = "返回起盘",
+            onAction = onBack,
+            modifier = Modifier.fillMaxSize(),
+        )
         return
     }
 
@@ -151,7 +163,9 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
             }
         }
 
-        // ── 时辰快捷对比 ──
+        QimenBoard(result = r, animate = boardAnimate, onPalaceClick = { selectedPalace = it })
+
+        // 时辰切换紧邻盘面；切换后保持不重复入场。
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(QimenDimens.spacingMd),
@@ -163,6 +177,11 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                 },
                 modifier = Modifier.weight(1f),
             ) { Text("‹ 上一时辰") }
+            Text(
+                r.siZhu.takeLast(2) + "时",
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.align(Alignment.CenterVertically),
+            )
             QimenOutlinedButton(
                 onClick = {
                     boardAnimate = false
@@ -172,33 +191,13 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
             ) { Text("下一时辰 ›") }
         }
 
-        QimenBoard(result = r, animate = boardAnimate, onPalaceClick = { selectedPalace = it })
-
         // ── 格局（据《奇门鸣法》第三卷，可折叠）──
         if (patterns.isNotEmpty()) {
-            QimenCard(accentBar = true) {
-                var patternsExpanded by remember { mutableStateOf(true) }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { patternsExpanded = !patternsExpanded },
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        "格局",
-                        fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    Text(
-                        if (patternsExpanded) "收起" else "展开",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                }
-                if (patternsExpanded) {
-                    Spacer(modifier = Modifier.height(QimenDimens.spacingMd))
+            CollapsibleSection(
+                title = "格局 · 命中 ${patterns.size} 项",
+                expanded = patternsExpanded,
+                onExpandedChange = { patternsExpanded = it },
+            ) {
                     patterns.forEach { p ->
                         Column(
                             modifier = Modifier
@@ -230,7 +229,6 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                             )
                         }
                     }
-                }
             }
         }
 
@@ -242,6 +240,9 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
             )
         }
 
+        QimenCard(accentBar = true) {
+        SectionHeader(title = "占断记录")
+        Spacer(Modifier.height(QimenDimens.spacingMd))
         OutlinedTextField(
             value = tags,
             onValueChange = viewModel::setTags,
@@ -254,7 +255,7 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
             "事项类别",
             style = MaterialTheme.typography.titleSmall,
             modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center,
+            textAlign = TextAlign.Start,
         )
         // 事项类别：自适应流式标签（与案例页标签同尺寸）
         FlowRow(
@@ -274,9 +275,15 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
             }
         }
 
+        saveMessage?.let {
+            Text(it, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(QimenDimens.spacingMd)) {
             QimenButton(
-                onClick = { viewModel.saveCase() },
+                onClick = {
+                    viewModel.saveCase()
+                    saveMessage = "已提交保存"
+                },
                 modifier = Modifier.weight(1f),
             ) {
                 Text("保存案例")
@@ -301,9 +308,10 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                 },
                 modifier = Modifier.weight(1f),
             ) {
-                Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.padding(end = 6.dp))
+                Icon(Icons.Default.Share, contentDescription = "分享盘面", modifier = Modifier.padding(end = QimenDimens.spacingSm))
                 Text("分享盘面")
             }
+        }
         }
 
         // ── AI 辅助断局（仅 AI 开关开启时显示）──
@@ -341,17 +349,17 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                     .padding(top = QimenDimens.spacingSm),
             )
 
+            if (aiLoading) {
+                LoadingState(message = "玄鉴参断中 · ${aiElapsed}s")
+            }
+
             if (aiReading.isNotBlank()) {
-                QimenCard(accentBar = true) {
+                CollapsibleSection(
+                    title = "玄鉴 · ${aiReading.lineSequence().firstOrNull()?.take(18).orEmpty()}",
+                    expanded = aiExpanded,
+                    onExpandedChange = { aiExpanded = it },
+                ) {
                     var showReasoning by remember { mutableStateOf(false) }
-                    Text(
-                        "玄鉴",
-                        fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center,
-                    )
-                    Spacer(modifier = Modifier.height(QimenDimens.spacingSm))
                     if (aiReasoning.isNotBlank()) {
                         Text(
                             if (showReasoning) "▾ 思考过程" else "▸ 思考过程",
@@ -376,6 +384,8 @@ fun ResultScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                         }
                         Spacer(modifier = Modifier.height(QimenDimens.spacingSm))
                     }
+                    Text("结论", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    Spacer(modifier = Modifier.height(QimenDimens.spacingSm))
                     MarkdownText(text = aiReading)
                 }
             }
