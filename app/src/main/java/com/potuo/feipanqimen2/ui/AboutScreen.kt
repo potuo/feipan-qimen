@@ -28,10 +28,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Public
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -60,7 +60,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.potuo.feipanqimen2.ChangelogEntry
 import com.potuo.feipanqimen2.NoticeInfo
@@ -69,10 +68,15 @@ import com.potuo.feipanqimen2.UpdateChecker
 import com.potuo.feipanqimen2.UpdateInfo
 import com.potuo.feipanqimen2.log.LogManager
 import com.potuo.feipanqimen2.ui.components.CollapsibleSection
+import com.potuo.feipanqimen2.ui.components.Badge
+import com.potuo.feipanqimen2.ui.components.EmptyState
+import com.potuo.feipanqimen2.ui.components.ErrorState
+import com.potuo.feipanqimen2.ui.components.LoadingState
 import com.potuo.feipanqimen2.ui.components.QimenButton
 import com.potuo.feipanqimen2.ui.components.QimenCard
 import com.potuo.feipanqimen2.ui.components.QimenDialog
 import com.potuo.feipanqimen2.ui.components.QimenOutlinedButton
+import com.potuo.feipanqimen2.ui.components.SectionHeader
 import com.potuo.feipanqimen2.ui.theme.QimenDimens
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -188,8 +192,8 @@ fun AboutScreen() {
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(QimenDimens.spacingLg),
-        verticalArrangement = Arrangement.spacedBy(QimenDimens.spacingMd),
+            .padding(QimenDimens.pageGutter),
+        verticalArrangement = Arrangement.spacedBy(QimenDimens.sectionGap),
     ) {
         // ── 应用信息 ──
         QimenCard(
@@ -211,7 +215,7 @@ fun AboutScreen() {
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Spacer(modifier = Modifier.height(QimenDimens.spacingXs))
-                        Text("版本 v$versionName · 作者 Potuo", style = MaterialTheme.typography.bodySmall)
+                        Text("版本 v$versionName", style = MaterialTheme.typography.bodySmall)
                     }
                 }
                 Spacer(modifier = Modifier.height(QimenDimens.spacingSm))
@@ -220,98 +224,65 @@ fun AboutScreen() {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Row(
+                AboutInfoRow(
+                    icon = { Icon(Icons.Default.Info, contentDescription = null) },
+                    label = "作者",
+                    value = "Potuo",
+                )
+                AboutInfoRow(
                     modifier = Modifier
-                        .fillMaxWidth()
                         .clickable {
                             runCatching {
                                 context.startActivity(
                                     Intent(Intent.ACTION_VIEW, Uri.parse("https://potuo.github.io/")),
                                 )
                             }
-                        }
-                        .padding(top = QimenDimens.spacingMd),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        Icons.Default.Public,
-                        contentDescription = "官网",
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(18.dp),
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        "官网：potuo.github.io ↗",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                }
-                Row(
+                        },
+                    icon = { Icon(Icons.Default.Public, contentDescription = "官网") },
+                    label = "官网",
+                    value = "potuo.github.io ↗",
+                )
+                AboutInfoRow(
                     modifier = Modifier
-                        .fillMaxWidth()
                         .clickable {
                             runCatching {
                                 context.startActivity(
                                     Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/potuo/feipan-qimen")),
                                 )
                             }
-                        }
-                        .padding(top = QimenDimens.spacingMd),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        painterResource(R.drawable.ic_github),
-                        contentDescription = "GitHub",
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(18.dp),
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        "GitHub：potuo/feipan-qimen ↗",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                }
-                Row(
+                        },
+                    icon = { Icon(painterResource(R.drawable.ic_github), contentDescription = "GitHub") },
+                    label = "仓库",
+                    value = "GitHub · potuo/feipan-qimen ↗",
+                )
+                AboutInfoRow(
                     modifier = Modifier
-                        .fillMaxWidth()
                         .clickable {
                             runCatching {
                                 context.startActivity(
                                     Intent(Intent.ACTION_VIEW, Uri.parse("https://gitee.com/potuo/feipan-qimen")),
                                 )
                             }
-                        }
-                        .padding(top = QimenDimens.spacingSm),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        painterResource(R.drawable.ic_gitee),
-                        contentDescription = "Gitee",
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(18.dp),
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        "Gitee：potuo/feipan-qimen ↗",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                }
-                HorizontalDivider(modifier = Modifier.padding(vertical = QimenDimens.spacingMd))
-                Text("MIT License", style = MaterialTheme.typography.bodySmall)
+                        },
+                    icon = { Icon(painterResource(R.drawable.ic_gitee), contentDescription = "Gitee") },
+                    label = "镜像",
+                    value = "Gitee · potuo/feipan-qimen ↗",
+                )
+                AboutInfoRow(
+                    icon = { Icon(Icons.Default.Description, contentDescription = null) },
+                    label = "许可",
+                    value = "MIT License",
+                )
         }
 
         // ── 系统公告（Gitee 拉取；无公告不显示）──
         notice?.let { n ->
-            CollapsibleSection(title = "系统公告", defaultExpanded = true) {
+            QimenCard(accentBar = true, containerColor = MaterialTheme.colorScheme.secondaryContainer) {
+                SectionHeader(title = "系统公告", sealMark = "公告")
                 Text(
                     n.text,
                     style = MaterialTheme.typography.bodyMedium,
-                    lineHeight = 22.sp,
+                    modifier = Modifier.padding(top = QimenDimens.spacingMd),
                 )
                 n.date?.let { d ->
                     Spacer(modifier = Modifier.height(QimenDimens.spacingXs))
@@ -325,12 +296,15 @@ fun AboutScreen() {
         }
 
         // ── 检查更新 ──
-        CollapsibleSection(title = "检查更新", defaultExpanded = true) {
-            Text(
-                "当前版本：v$versionName",
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium,
-            )
+        QimenCard(accentBar = true) {
+            SectionHeader(title = "检查更新", sealMark = "v$versionName")
+            Row(Modifier.fillMaxWidth().padding(top = QimenDimens.spacingMd), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("当前版本", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("v$versionName", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
+                }
+                Badge(if (downloading) "下载中" else if (checking) "检查中" else "可检查")
+            }
             QimenButton(
                 onClick = { checkForUpdate() },
                 modifier = Modifier
@@ -367,7 +341,7 @@ fun AboutScreen() {
         }
 
         // ── 应用日志 ──
-        CollapsibleSection(title = "应用日志") {
+        CollapsibleSection(title = "应用日志 · 高级功能") {
             Text(
                 "当前日志：${logSizeKB} KB",
                 style = MaterialTheme.typography.labelMedium,
@@ -408,24 +382,16 @@ fun AboutScreen() {
         // ── 更新日志（联网拉取）──
         CollapsibleSection(title = "更新日志", defaultExpanded = false) {
             when {
-                changelogLoading -> Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(QimenDimens.spacingMd),
-                    horizontalArrangement = Arrangement.Center,
-                ) {
-                    CircularProgressIndicator(modifier = Modifier.height(28.dp))
-                }
-                changelogFailed && visibleLogs.isNullOrEmpty() -> Text(
-                    "更新日志加载失败（网络不可用）",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                changelogLoading -> LoadingState("正在加载更新日志…")
+                changelogFailed && visibleLogs.isNullOrEmpty() -> ErrorState("更新日志加载失败（网络不可用）")
+                visibleLogs.isNullOrEmpty() -> EmptyState("暂无更新日志")
                 !visibleLogs.isNullOrEmpty() -> {
                     visibleLogs.forEach { log ->
-                        Column(modifier = Modifier.padding(bottom = QimenDimens.spacingLg)) {
+                        Row(modifier = Modifier.padding(bottom = QimenDimens.spacingLg)) {
+                            Badge(log.version)
+                            Column(Modifier.padding(start = QimenDimens.spacingMd)) {
                             Text(
-                                "${log.version}（${log.date}）",
+                                log.date,
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary,
@@ -436,6 +402,7 @@ fun AboutScreen() {
                                     style = MaterialTheme.typography.bodySmall,
                                     modifier = Modifier.padding(top = 2.dp),
                                 )
+                            }
                             }
                         }
                     }
@@ -477,6 +444,28 @@ fun AboutScreen() {
     }
 }
 
+@Composable
+private fun AboutInfoRow(
+    icon: @Composable () -> Unit,
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth().padding(top = QimenDimens.spacingMd),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(QimenDimens.spacingXl), contentAlignment = Alignment.Center) { icon() }
+        Text(
+            label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.width(56.dp).padding(start = QimenDimens.spacingSm),
+        )
+        Text(value, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+    }
+}
+
 /** GitHub 头像：网络加载（失败时显示首字母占位），圆形裁剪 */
 @Composable
 private fun GithubAvatar(url: String, size: androidx.compose.ui.unit.Dp) {
@@ -514,8 +503,7 @@ private fun GithubAvatar(url: String, size: androidx.compose.ui.unit.Dp) {
         ) {
             Text(
                 "P",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
@@ -584,16 +572,17 @@ private fun LogViewerDialog(onDismiss: () -> Unit) {
                 val filtered = if (query.isBlank()) content else {
                     content.lineSequence().filter { it.contains(query) }.joinToString("\n")
                 }
-                Text(
-                    filtered.ifBlank { "（暂无日志）" },
-                    style = MaterialTheme.typography.bodySmall,
-                    fontFamily = FontFamily.Monospace,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = QimenDimens.spacingMd)
-                        .padding(bottom = QimenDimens.spacingLg),
-                )
+                when {
+                    files.isEmpty() -> EmptyState("暂无日志文件", modifier = Modifier.fillMaxSize())
+                    query.isNotBlank() && filtered.isBlank() -> EmptyState("未找到匹配「$query」的日志", modifier = Modifier.fillMaxSize())
+                    else -> Text(
+                        filtered,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontFamily = FontFamily.Monospace,
+                        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                            .padding(horizontal = QimenDimens.spacingMd).padding(bottom = QimenDimens.spacingLg),
+                    )
+                }
             }
         }
     }

@@ -1,61 +1,37 @@
 package com.potuo.feipanqimen2.ui
 
 import android.content.Context
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimePicker
-import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.material3.rememberTimePickerState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.WarningAmber
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import com.potuo.feipanqimen2.qimen.QimenConstants
 import com.potuo.feipanqimen2.qimen.TrueSolarTime
 import com.potuo.feipanqimen2.ui.components.QimenButton
+import com.potuo.feipanqimen2.ui.components.QimenCard
 import com.potuo.feipanqimen2.ui.components.QimenOutlinedButton
+import com.potuo.feipanqimen2.ui.components.SectionHeader
 import com.potuo.feipanqimen2.ui.theme.QimenDimens
 import com.potuo.feipanqimen2.viewmodel.MainViewModel
-import java.time.Instant
-import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.ZoneId
+import java.time.*
 import java.time.format.DateTimeFormatter
 
 private fun hourToShiChenIndex(hour: Int): Int = when (hour) {
-    23, 0 -> 0
-    1, 2 -> 1
-    3, 4 -> 2
-    5, 6 -> 3
-    7, 8 -> 4
-    9, 10 -> 5
-    11, 12 -> 6
-    13, 14 -> 7
-    15, 16 -> 8
-    17, 18 -> 9
-    19, 20 -> 10
-    21, 22 -> 11
+    23, 0 -> 0; 1, 2 -> 1; 3, 4 -> 2; 5, 6 -> 3; 7, 8 -> 4; 9, 10 -> 5
+    11, 12 -> 6; 13, 14 -> 7; 15, 16 -> 8; 17, 18 -> 9; 19, 20 -> 10; 21, 22 -> 11
     else -> 0
 }
 
@@ -70,143 +46,102 @@ fun InputScreen(viewModel: MainViewModel, onCalculate: () -> Unit) {
     var selectedHour by remember { mutableIntStateOf(LocalTime.now().hour) }
     var selectedMinute by remember { mutableIntStateOf(LocalTime.now().minute) }
 
-    // 真太阳时（据教材「抽时选局」：以卦师所在地地方时起卦）
-    // 每次组合直接读设置，避免 remember 缓存旧经度（设置页改完后回输入页立即可见）
     val context = LocalContext.current
-    val longitude = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
-        .getFloat("longitude", 120.0f)
+    val longitude = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE).getFloat("longitude", 120.0f)
     val hourRange = QimenConstants.HOUR_RANGES[selectedHourIndex]
     val hour = if (hourRange.first == 23) 23 else hourRange.first
     val beijingDt = LocalDateTime.of(selectedDate.year, selectedDate.month, selectedDate.dayOfMonth, hour, 0)
     val trueSolarDt = TrueSolarTime.toTrueSolar(beijingDt, longitude.toDouble())
     val trueHourName = TrueSolarTime.hourName(trueSolarDt.hour)
     val crossingHint = TrueSolarTime.crossingHourHint(beijingDt, longitude.toDouble())
+    val calculate = { viewModel.calculate(); onCalculate() }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(QimenDimens.spacingXl),
-        verticalArrangement = Arrangement.spacedBy(QimenDimens.spacingLg),
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(QimenDimens.pageGutter),
+        verticalArrangement = Arrangement.spacedBy(QimenDimens.sectionGap),
     ) {
-        Text(
-            "鸣法飞盘起卦",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            "选择日期与时辰，点击起盘",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center,
-        )
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("天禽 · 鸣法飞盘", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+            Text("以时为纲，以事为问", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
 
-        QimenOutlinedButton(
-            onClick = { showDatePicker = true },
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(
-                selectedDate.format(DateTimeFormatter.ofPattern("yyyy年MM月dd日")),
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center,
+        Column(verticalArrangement = Arrangement.spacedBy(QimenDimens.spacingMd)) {
+            SectionHeader("起局时间", sealMark = QimenConstants.HOUR_NAMES[selectedHourIndex])
+            QimenCard {
+                TimeFieldRow("日期", selectedDate.format(DateTimeFormatter.ofPattern("yyyy年MM月dd日")), Icons.Default.CalendarMonth) { showDatePicker = true }
+                Spacer(Modifier.height(QimenDimens.spacingSm))
+                TimeFieldRow("时刻", String.format("%02d:%02d · %s", selectedHour, selectedMinute, QimenConstants.HOUR_NAMES[selectedHourIndex]), Icons.Default.AccessTime) { showTimePicker = true }
+            }
+            SolarTimeStatus(
+                beijingDt.format(DateTimeFormatter.ofPattern("HH:mm")),
+                trueSolarDt.format(DateTimeFormatter.ofPattern("HH:mm")),
+                trueHourName, longitude.toInt(), crossingHint,
             )
         }
 
-        QimenOutlinedButton(
-            onClick = { showTimePicker = true },
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(
-                String.format(
-                    "%02d:%02d · %s",
-                    selectedHour,
-                    selectedMinute,
-                    QimenConstants.HOUR_NAMES[selectedHourIndex],
-                ),
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center,
+        Column(verticalArrangement = Arrangement.spacedBy(QimenDimens.spacingMd)) {
+            SectionHeader("所占事项", sealMark = "可选")
+            OutlinedTextField(
+                value = note, onValueChange = viewModel::setNote, modifier = Modifier.fillMaxWidth(),
+                label = { Text("标题") }, placeholder = { Text("留空将按当前局势自动命名") },
+                supportingText = { Text("已输入 ${note.length} 字 · 可选") }, minLines = 1,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { calculate() }),
             )
         }
-
-        Text(
-            crossingHint
-                ?: "真太阳时：$trueHourName（东经 ${longitude.toInt()}°，北京时间选${QimenConstants.HOUR_NAMES[selectedHourIndex]}）",
-            style = MaterialTheme.typography.labelSmall,
-            color = if (crossingHint != null) MaterialTheme.colorScheme.error
-            else MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center,
-        )
-
-        OutlinedTextField(
-            value = note,
-            onValueChange = viewModel::setNote,
-            label = { Text("标题") },
-            placeholder = { Text("留空默认「xx月xx日 阴/阳遁x局」") },
-            modifier = Modifier.fillMaxWidth(),
-            minLines = 1,
-        )
-
-        Spacer(modifier = Modifier.height(QimenDimens.spacingSm))
-
-        QimenButton(
-            onClick = {
-                viewModel.calculate()
-                onCalculate()
-            },
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text("起盘")
-        }
+        QimenButton(onClick = calculate, modifier = Modifier.fillMaxWidth()) { Text("起盘") }
     }
 
     if (showDatePicker) {
-        val state = rememberDatePickerState(
-            initialSelectedDateMillis = selectedDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli(),
-        )
+        val state = rememberDatePickerState(selectedDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli())
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    state.selectedDateMillis?.let { millis ->
-                        val date = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
-                        viewModel.setDate(date)
-                    }
-                    showDatePicker = false
-                }) { Text("确定") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("取消") }
-            },
-        ) {
-            DatePicker(state = state)
-        }
+            confirmButton = { TextButton(onClick = {
+                state.selectedDateMillis?.let { viewModel.setDate(Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate()) }
+                showDatePicker = false
+            }) { Text("确定") } },
+            dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text("取消") } },
+        ) { DatePicker(state) }
     }
-
     if (showTimePicker) {
-        val timePickerState = rememberTimePickerState(
-            initialHour = selectedHour,
-            initialMinute = selectedMinute,
-            is24Hour = true,
-        )
+        val state = rememberTimePickerState(selectedHour, selectedMinute, true)
         AlertDialog(
             onDismissRequest = { showTimePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    selectedHour = timePickerState.hour
-                    selectedMinute = timePickerState.minute
-                    viewModel.setHourIndex(hourToShiChenIndex(timePickerState.hour))
-                    showTimePicker = false
-                }) { Text("确定") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showTimePicker = false }) { Text("取消") }
-            },
-            text = {
-                TimePicker(state = timePickerState)
-            },
+            confirmButton = { TextButton(onClick = {
+                selectedHour = state.hour; selectedMinute = state.minute
+                viewModel.setHourIndex(hourToShiChenIndex(state.hour)); showTimePicker = false
+            }) { Text("确定") } },
+            dismissButton = { TextButton(onClick = { showTimePicker = false }) { Text("取消") } },
+            text = { TimePicker(state) },
         )
+    }
+}
+
+@Composable
+private fun TimeFieldRow(label: String, value: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
+    QimenOutlinedButton(onClick, Modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Icon(icon, null, tint = MaterialTheme.colorScheme.primary)
+            Column(Modifier.weight(1f).padding(horizontal = QimenDimens.spacingMd)) {
+                Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(value, style = MaterialTheme.typography.bodyLarge)
+            }
+        }
+    }
+}
+
+@Composable
+private fun SolarTimeStatus(beijingTime: String, trueSolarTime: String, hourName: String, longitude: Int, crossingHint: String?) {
+    val warning = crossingHint != null
+    val accent = if (warning) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+    QimenCard(accentBar = true, accentColor = accent, containerColor = accent.copy(alpha = 0.08f)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(if (warning) Icons.Default.WarningAmber else Icons.Default.Schedule, null, tint = accent, modifier = Modifier.size(QimenDimens.spacingXl))
+            Column(Modifier.padding(start = QimenDimens.spacingMd)) {
+                Text("地方真太阳时校时", style = MaterialTheme.typography.titleSmall, color = accent)
+                Text("北京时间 $beijingTime  →  地方时 $trueSolarTime · $hourName", style = MaterialTheme.typography.bodyMedium)
+                Text(crossingHint ?: "东经 $longitude° · 校时后未跨时辰", style = MaterialTheme.typography.labelMedium, color = if (warning) accent else MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
     }
 }
