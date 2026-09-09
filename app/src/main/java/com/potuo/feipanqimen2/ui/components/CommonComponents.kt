@@ -20,15 +20,16 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -41,9 +42,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.potuo.feipanqimen2.ui.theme.CardShape
 import com.potuo.feipanqimen2.ui.theme.LocalQimenPalette
 import com.potuo.feipanqimen2.ui.theme.QimenDimens
+import com.potuo.feipanqimen2.ui.theme.QimenShapeTokens
 
 @Composable
 fun QimenButton(
@@ -58,7 +59,7 @@ fun QimenButton(
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.97f else 1f,
-        animationSpec = tween(100),
+        animationSpec = tween(QimenDimens.motionDurationShort),
         label = "buttonScale",
     )
     Button(
@@ -78,24 +79,26 @@ fun QimenButton(
 fun QimenOutlinedButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     content: @Composable RowScope.() -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.97f else 1f,
-        animationSpec = tween(100),
+        animationSpec = tween(QimenDimens.motionDurationShort),
         label = "outlinedButtonScale",
     )
-    Button(
+    OutlinedButton(
         onClick = onClick,
         modifier = modifier.scale(scale),
+        enabled = enabled,
         interactionSource = interactionSource,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.surface,
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = Color.Transparent,
             contentColor = MaterialTheme.colorScheme.onSurface,
         ),
-        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         content = content,
     )
 }
@@ -108,7 +111,7 @@ fun SealBadge(
 ) {
     Surface(
         modifier = modifier,
-        shape = MaterialTheme.shapes.extraSmall,
+        shape = QimenShapeTokens.badge,
         color = MaterialTheme.colorScheme.secondaryContainer,
         contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
     ) {
@@ -123,11 +126,12 @@ fun SealBadge(
     }
 }
 
+/** 无内容时的统一状态；动作标签或回调缺省时显示纯空态。 */
 @Composable
 fun EmptyState(
     message: String,
-    actionLabel: String,
-    onAction: () -> Unit,
+    actionLabel: String? = null,
+    onAction: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -141,9 +145,90 @@ fun EmptyState(
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Spacer(modifier = Modifier.height(QimenDimens.spacingLg))
-        QimenButton(onClick = onAction) {
-            Text(actionLabel)
+        if (actionLabel != null && onAction != null) {
+            Spacer(modifier = Modifier.height(QimenDimens.spacingLg))
+            QimenButton(onClick = onAction) { Text(actionLabel) }
+        }
+    }
+}
+
+/** 一级内容分组标题；可用 [sealMark] 在标题旁展示简短朱砂印记。 */
+@Composable
+fun SectionHeader(
+    title: String,
+    modifier: Modifier = Modifier,
+    sealMark: String? = null,
+) {
+    Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            Modifier
+                .width(4.dp)
+                .height(20.dp)
+                .background(LocalQimenPalette.current.cinnabar, QimenShapeTokens.accentMark),
+        )
+        Spacer(Modifier.width(QimenDimens.spacingSm))
+        Text(title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+        sealMark?.let {
+            Badge(
+                text = it,
+                containerColor = LocalQimenPalette.current.cinnabar.copy(alpha = 0.14f),
+                contentColor = LocalQimenPalette.current.cinnabar,
+            )
+        }
+    }
+}
+
+/** 用于类别、状态等短文本的小型胶囊标签。 */
+@Composable
+fun Badge(
+    text: String,
+    modifier: Modifier = Modifier,
+    containerColor: Color = MaterialTheme.colorScheme.secondaryContainer,
+    contentColor: Color = MaterialTheme.colorScheme.onSecondaryContainer,
+) {
+    Surface(
+        modifier = modifier,
+        shape = QimenShapeTokens.badge,
+        color = containerColor,
+        contentColor = contentColor,
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = QimenDimens.spacingSm, vertical = QimenDimens.spacingXs),
+            style = MaterialTheme.typography.labelSmall,
+        )
+    }
+}
+
+/** 页面或内容区域正在加载时的统一状态。 */
+@Composable
+fun LoadingState(message: String = "加载中…", modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier.fillMaxWidth().padding(QimenDimens.spacingXxl),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        CircularProgressIndicator()
+        Spacer(Modifier.height(QimenDimens.spacingLg))
+        Text(message, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/** 加载或操作失败时的统一状态；[onRetry] 为空时仅展示错误说明。 */
+@Composable
+fun ErrorState(
+    message: String,
+    modifier: Modifier = Modifier,
+    retryLabel: String = "重试",
+    onRetry: (() -> Unit)? = null,
+) {
+    Column(
+        modifier = modifier.fillMaxWidth().padding(QimenDimens.spacingXxl),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(message, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.error)
+        onRetry?.let {
+            Spacer(Modifier.height(QimenDimens.spacingLg))
+            QimenOutlinedButton(onClick = it) { Text(retryLabel) }
         }
     }
 }
@@ -177,7 +262,7 @@ fun QimenDialog(
         modifier = modifier,
     ) {
         Surface(
-            shape = CardShape,
+            shape = QimenShapeTokens.dialog,
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
             tonalElevation = 6.dp,
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
@@ -189,7 +274,7 @@ fun QimenDialog(
                         modifier = Modifier
                             .width(4.dp)
                             .height(18.dp)
-                            .background(accentColor, RoundedCornerShape(2.dp)),
+                            .background(accentColor, QimenShapeTokens.accentMark),
                     )
                     Spacer(modifier = Modifier.width(QimenDimens.spacingSm))
                     Text(
@@ -205,7 +290,7 @@ fun QimenDialog(
                 text?.let {
                     Box(
                         modifier = Modifier
-                            .heightIn(max = 360.dp)
+                            .heightIn(max = QimenDimens.dialogMaxHeight)
                             .verticalScroll(rememberScrollState()),
                     ) { it() }
                 }
@@ -251,36 +336,51 @@ fun QimenDialog(
     }
 }
 
+/** 卡片视觉层级：无边框、描边或轻抬升。 */
+enum class QimenCardLevel { Plain, Outlined, Elevated }
+
 /**
  * 古风卡片：圆角 + 描边 + 可选朱砂竖条点缀。
- * 统一纸感样式，替代散落的 Card 写法。
  *
- * @param accentBar 为 true 时在左侧绘制一条朱砂竖条（适合带标题的分区卡片）。
+ * @param accentBar 为 true 时在左侧绘制一条朱砂竖条。
+ * @param containerColor 自定义容器色；为空时按 [level] 选择语义容器色。
+ * @param level 卡片视觉层级；默认 [QimenCardLevel.Outlined] 保持既有视觉。
  */
 @Composable
 fun QimenCard(
     modifier: Modifier = Modifier,
     accentBar: Boolean = false,
     accentColor: Color = LocalQimenPalette.current.cinnabar,
-    containerColor: Color = MaterialTheme.colorScheme.surfaceVariant,
+    containerColor: Color? = null,
+    level: QimenCardLevel = QimenCardLevel.Outlined,
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val resolvedContainerColor = containerColor ?: when (level) {
+        QimenCardLevel.Plain -> MaterialTheme.colorScheme.surface
+        QimenCardLevel.Outlined -> MaterialTheme.colorScheme.surfaceVariant
+        QimenCardLevel.Elevated -> MaterialTheme.colorScheme.surfaceContainerLow
+    }
     Card(
         modifier = modifier
             .fillMaxWidth()
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
-        shape = CardShape,
-        colors = CardDefaults.cardColors(containerColor = containerColor),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        shape = QimenShapeTokens.card,
+        colors = CardDefaults.cardColors(containerColor = resolvedContainerColor),
+        border = if (level == QimenCardLevel.Outlined) {
+            BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        } else null,
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (level == QimenCardLevel.Elevated) 3.dp else 0.dp,
+        ),
     ) {
-        Row(modifier = Modifier.padding(QimenDimens.spacingLg)) {
+        Row(modifier = Modifier.padding(QimenDimens.cardPadding)) {
             if (accentBar) {
                 Box(
                     modifier = Modifier
                         .width(4.dp)
                         .height(20.dp)
-                        .background(accentColor, RoundedCornerShape(2.dp)),
+                        .background(accentColor, QimenShapeTokens.accentMark),
                 )
                 Spacer(modifier = Modifier.width(QimenDimens.spacingSm))
             }
